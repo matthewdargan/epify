@@ -170,7 +170,7 @@ func mkSeason(season int, showDir string, episodes []fs.FileInfo) error {
 	}
 	path := fmt.Sprintf("Season %02d", season)
 	seasonDir := filepath.Join(showDir, path)
-	if err := os.Mkdir(seasonDir, 0o750); err != nil {
+	if err := os.Mkdir(seasonDir, 0o755); err != nil {
 		log.Fatal(err)
 	}
 	for i, e := range eps {
