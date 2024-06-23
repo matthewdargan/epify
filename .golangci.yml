@@ -9,6 +9,9 @@ linters:
     - paralleltest
     - revive
 linters-settings:
+  errcheck:
+    exclude-functions:
+      - os.RemoveAll
   govet:
     disable:
       - fieldalignment

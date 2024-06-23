@@ -49,6 +49,8 @@ import (
 	"slices"
 	"strconv"
 	"strings"
+
+	"github.com/matthewdargan/epify/internal/epify"
 )
 
 var re = regexp.MustCompile(`\d+`)
@@ -75,21 +77,13 @@ func main() {
 		if flag.NArg() != 5 {
 			usage()
 		}
-		name := args[1]
-		year, err := strconv.Atoi(args[2])
-		if err != nil {
-			log.Fatal(err)
+		s := epify.Show{
+			Name:   args[1],
+			Year:   args[2],
+			TVDBID: args[3],
+			Dir:    args[4],
 		}
-		tvdbid, err := strconv.Atoi(args[3])
-		if err != nil {
-			log.Fatal(err)
-		}
-		dir := args[4]
-		parent := filepath.Dir(dir)
-		if _, err = os.Stat(parent); err != nil {
-			log.Fatal(err)
-		}
-		if err = mkShow(name, year, tvdbid, dir); err != nil {
+		if err := epify.MkShow(&s); err != nil {
 			log.Fatal(err)
 		}
 	case "season":
@@ -147,14 +141,6 @@ func main() {
 	default:
 		usage()
 	}
-}
-
-func mkShow(name string, year int, tvdbid int, dir string) error {
-	path := fmt.Sprintf("%s (%d) [tvdbid-%d]", name, year, tvdbid)
-	if err := os.Mkdir(filepath.Join(dir, path), 0o750); err != nil {
-		return err
-	}
-	return nil
 }
 
 func mkSeason(season int, showDir string, episodes []fs.FileInfo) error {
