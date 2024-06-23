@@ -77,7 +77,7 @@ func TestMkSeason(t *testing.T) {
 		},
 		{
 			name:    "invalid show directory",
-			season:  &Season{N: "3", ShowDir: "nonexistent"},
+			season:  &Season{N: "3", ShowDir: "nonexistent-dir"},
 			wantErr: true,
 		},
 		{
@@ -88,6 +88,16 @@ func TestMkSeason(t *testing.T) {
 		{
 			name:    "no episodes",
 			season:  &Season{N: "3"},
+			wantErr: true,
+		},
+		{
+			name:    "invalid episode",
+			season:  &Season{N: "3", Episodes: []string{"nonexistent.mkv"}},
+			wantErr: true,
+		},
+		{
+			name:    "invalid episode directory",
+			season:  &Season{N: "3", Episodes: []string{"nonexistent-dir"}},
 			wantErr: true,
 		},
 	}
@@ -106,7 +116,6 @@ func TestMkSeason(t *testing.T) {
 			if (err != nil) != tt.wantErr {
 				t.Errorf("MkSeason(%v) error = %v", tt.season, err)
 			}
-			t.Logf("name = %s, err = %v", tt.name, err)
 		})
 	}
 }
