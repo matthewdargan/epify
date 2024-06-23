@@ -90,28 +90,12 @@ func main() {
 		if flag.NArg() < 4 {
 			usage()
 		}
-		season, err := strconv.Atoi(args[1])
-		if err != nil {
-			log.Fatal(err)
+		s := epify.Season{
+			N:        args[1],
+			ShowDir:  args[2],
+			Episodes: args[3:],
 		}
-		showDir := args[2]
-		info, err := os.Stat(showDir)
-		if err != nil {
-			log.Fatal(err)
-		}
-		if !info.IsDir() {
-			log.Fatalf("%q is not a directory", showDir)
-		}
-		episodes := args[3:]
-		efis := make([]fs.FileInfo, len(episodes))
-		for i, e := range episodes {
-			info, err = os.Stat(e)
-			if err != nil {
-				log.Fatal(err)
-			}
-			efis[i] = info
-		}
-		if err = mkSeason(season, showDir, efis); err != nil {
+		if err := epify.MkSeason(&s); err != nil {
 			log.Fatal(err)
 		}
 	case "add":
@@ -141,45 +125,6 @@ func main() {
 	default:
 		usage()
 	}
-}
-
-func mkSeason(season int, showDir string, episodes []fs.FileInfo) error {
-	if len(episodes) == 0 {
-		return fmt.Errorf("no episodes found")
-	}
-	eps := make([]fs.FileInfo, 0, len(episodes))
-	for _, e := range episodes {
-		if e.IsDir() {
-			ents, err := os.ReadDir(e.Name())
-			if err != nil {
-				return err
-			}
-			for _, ep := range ents {
-				info, err := ep.Info()
-				if err != nil {
-					return err
-				}
-				eps = append(eps, info)
-			}
-		} else {
-			eps = append(eps, e)
-		}
-	}
-	if err := sortEpisodes(eps); err != nil {
-		return err
-	}
-	path := fmt.Sprintf("Season %02d", season)
-	seasonDir := filepath.Join(showDir, path)
-	if err := os.Mkdir(seasonDir, 0o755); err != nil {
-		log.Fatal(err)
-	}
-	for i, e := range eps {
-		ep := fmt.Sprintf("S%02dE%02d%s", season, i+1, filepath.Ext(e.Name()))
-		if err := os.Rename(e.Name(), filepath.Join(seasonDir, ep)); err != nil {
-			return err
-		}
-	}
-	return nil
 }
 
 func addEpisodes(seasonDir string, episodes []fs.FileInfo) error {

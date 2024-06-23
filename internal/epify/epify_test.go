@@ -40,7 +40,7 @@ func TestMkShow(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
-			dir, err := os.MkdirTemp("", "shows")
+			dir, err := os.MkdirTemp("", "show")
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -50,6 +50,54 @@ func TestMkShow(t *testing.T) {
 			if (err != nil) != tt.wantErr {
 				t.Errorf("MkShow(%v) error = %v", tt.show, err)
 			}
+		})
+	}
+}
+
+func TestMkSeason(t *testing.T) {
+	t.Parallel()
+	tests := []struct {
+		name    string
+		season  *Season
+		wantErr bool
+	}{
+		{
+			name:    "invalid season number",
+			season:  &Season{N: "three"},
+			wantErr: true,
+		},
+		{
+			name:    "invalid show directory",
+			season:  &Season{N: "3", ShowDir: "nonexistent"},
+			wantErr: true,
+		},
+		{
+			name:    "show directory not a directory",
+			season:  &Season{N: "3", ShowDir: "doc.go"},
+			wantErr: true,
+		},
+		{
+			name:    "no episodes",
+			season:  &Season{N: "3"},
+			wantErr: true,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
+			if tt.season.ShowDir == "" {
+				dir, err := os.MkdirTemp("", "show")
+				if err != nil {
+					t.Fatal(err)
+				}
+				defer os.RemoveAll(dir)
+				tt.season.ShowDir = dir
+			}
+			err := MkSeason(tt.season)
+			if (err != nil) != tt.wantErr {
+				t.Errorf("MkSeason(%v) error = %v", tt.season, err)
+			}
+			t.Logf("name = %s, err = %v", tt.name, err)
 		})
 	}
 }
