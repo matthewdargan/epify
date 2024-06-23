@@ -86,7 +86,7 @@ func main() {
 		}
 		dir := args[4]
 		parent := filepath.Dir(dir)
-		if _, err := os.Stat(parent); err != nil {
+		if _, err = os.Stat(parent); err != nil {
 			log.Fatal(err)
 		}
 		if err = mkShow(name, year, tvdbid, dir); err != nil {
@@ -179,10 +179,7 @@ func mkSeason(season int, showDir string, episodes []fs.FileInfo) error {
 			eps = append(eps, e)
 		}
 	}
-	if err := validateEps(eps); err != nil {
-		return err
-	}
-	if err := sortEps(eps); err != nil {
+	if err := sortEpisodes(eps); err != nil {
 		return err
 	}
 	path := fmt.Sprintf("Season %02d", season)
@@ -226,10 +223,7 @@ func addEpisodes(seasonDir string, episodes []fs.FileInfo) error {
 			eps = append(eps, e)
 		}
 	}
-	if err := validateEps(eps); err != nil {
-		return err
-	}
-	if err := sortEps(eps); err != nil {
+	if err := sortEpisodes(eps); err != nil {
 		return err
 	}
 	ents, err := os.ReadDir(seasonDir)
@@ -257,30 +251,17 @@ func addEpisodes(seasonDir string, episodes []fs.FileInfo) error {
 	return nil
 }
 
-func validateEps(eps []fs.FileInfo) error {
+func sortEpisodes(eps []fs.FileInfo) error {
 	for _, e := range eps {
 		name := e.Name()
 		if _, err := strconv.Atoi(re.FindString(name)); err != nil {
 			return fmt.Errorf("episode %q must contain number: %w", name, err)
 		}
 	}
-	return nil
-}
-
-func sortEps(eps []fs.FileInfo) error {
-	var err2 error
 	slices.SortFunc(eps, func(a, b fs.FileInfo) int {
-		e1, err := strconv.Atoi(re.FindString(a.Name()))
-		if err != nil {
-			err2 = err
-			return 0
-		}
-		e2, err := strconv.Atoi(re.FindString(b.Name()))
-		if err != nil {
-			err2 = err
-			return 0
-		}
+		e1, _ := strconv.Atoi(re.FindString(a.Name()))
+		e2, _ := strconv.Atoi(re.FindString(b.Name()))
 		return cmp.Compare(e1, e2)
 	})
-	return err2
+	return nil
 }
