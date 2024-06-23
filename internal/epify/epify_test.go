@@ -5,7 +5,9 @@
 package epify
 
 import (
+	"fmt"
 	"os"
+	"path/filepath"
 	"testing"
 )
 
@@ -49,6 +51,13 @@ func TestMkShow(t *testing.T) {
 			err = MkShow(tt.show)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("MkShow(%v) error = %v", tt.show, err)
+			}
+			if !tt.wantErr {
+				path := fmt.Sprintf("%s (%s) [tvdbid-%s]", tt.show.Name, tt.show.Year, tt.show.TVDBID)
+				want := filepath.Join(tt.show.Dir, path)
+				if _, err := os.Stat(want); os.IsNotExist(err) {
+					t.Errorf("MkShow(%v) = %v, want %v", tt.show, err, want)
+				}
 			}
 		})
 	}
