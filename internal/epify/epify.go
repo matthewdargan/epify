@@ -106,12 +106,12 @@ func episodes(fis []fs.FileInfo) ([]fs.FileInfo, error) {
 		}
 		ents, err := os.ReadDir(e.Name())
 		if err != nil {
-			return nil, fmt.Errorf("invalid episode directory: %w", err)
+			return nil, fmt.Errorf("failed to read episode directory: %w", err)
 		}
 		for _, ep := range ents {
 			info, err := ep.Info()
 			if err != nil {
-				return nil, fmt.Errorf("invalid episode: %w", err)
+				return nil, fmt.Errorf("failed to retrieve episode info: %w", err)
 			}
 			eps = append(eps, info)
 		}
