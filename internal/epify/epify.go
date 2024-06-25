@@ -8,7 +8,6 @@ import (
 	"cmp"
 	"errors"
 	"fmt"
-	"io/fs"
 	"os"
 	"path/filepath"
 	"regexp"
@@ -68,19 +67,16 @@ func MkSeason(s *Season) error {
 	if len(s.Episodes) == 0 {
 		return errors.New("no episodes found")
 	}
-	fis := make([]fs.FileInfo, len(s.Episodes))
-	for i, e := range s.Episodes {
+	for _, e := range s.Episodes {
 		info, err = os.Stat(e)
 		if err != nil {
 			return fmt.Errorf("invalid episode: %w", err)
 		}
-		fis[i] = info
+		if info.IsDir() {
+			return fmt.Errorf("%q is a directory", e)
+		}
 	}
-	eps, err := episodes(fis)
-	if err != nil {
-		return err
-	}
-	if err = sortEpisodes(eps); err != nil {
+	if err = sortEpisodes(s.Episodes); err != nil {
 		return err
 	}
 	path := fmt.Sprintf("Season %02d", n)
@@ -88,49 +84,27 @@ func MkSeason(s *Season) error {
 	if err = os.Mkdir(seasonDir, 0o755); err != nil {
 		return err
 	}
-	for i, e := range eps {
-		ep := fmt.Sprintf("S%02dE%02d%s", n, i+1, filepath.Ext(e.Name()))
-		if err := os.Rename(e.Name(), filepath.Join(seasonDir, ep)); err != nil {
+	for i, e := range s.Episodes {
+		ep := fmt.Sprintf("S%02dE%02d%s", n, i+1, filepath.Ext(e))
+		if err := os.Rename(e, filepath.Join(seasonDir, ep)); err != nil {
 			return err
 		}
 	}
 	return nil
 }
 
-func episodes(fis []fs.FileInfo) ([]fs.FileInfo, error) {
-	eps := make([]fs.FileInfo, 0, len(fis))
-	for _, e := range fis {
-		if !e.IsDir() {
-			eps = append(eps, e)
-			continue
-		}
-		ents, err := os.ReadDir(e.Name())
-		if err != nil {
-			return nil, fmt.Errorf("failed to read episode directory: %w", err)
-		}
-		for _, ep := range ents {
-			info, err := ep.Info()
-			if err != nil {
-				return nil, fmt.Errorf("failed to retrieve episode info: %w", err)
-			}
-			eps = append(eps, info)
-		}
-	}
-	return eps, nil
-}
-
 var re = regexp.MustCompile(`\d+`)
 
-func sortEpisodes(eps []fs.FileInfo) error {
+func sortEpisodes(eps []string) error {
 	for _, e := range eps {
-		name := e.Name()
-		if _, err := strconv.Atoi(re.FindString(name)); err != nil {
-			return fmt.Errorf("episode %q must contain number: %w", name, err)
+		base := filepath.Base(e)
+		if _, err := strconv.Atoi(re.FindString(base)); err != nil {
+			return fmt.Errorf("episode %q must contain number: %w", e, err)
 		}
 	}
-	slices.SortFunc(eps, func(a, b fs.FileInfo) int {
-		e1, _ := strconv.Atoi(re.FindString(a.Name()))
-		e2, _ := strconv.Atoi(re.FindString(b.Name()))
+	slices.SortFunc(eps, func(a, b string) int {
+		e1, _ := strconv.Atoi(re.FindString(filepath.Base(a)))
+		e2, _ := strconv.Atoi(re.FindString(filepath.Base(b)))
 		return cmp.Compare(e1, e2)
 	})
 	return nil

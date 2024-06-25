@@ -30,11 +30,11 @@ Populate season directory
 `/media/shows/The Office (2005) [tvdbid-73244]/Season 03`:
 
 ```sh
-$ epify season 3 '/media/shows/The Office (2005) [tvdbid-73244]' '/downloads/the_office_s3_part_1' '/downloads/the_office_s3_ep13.mkv'
+$ epify season 3 '/media/shows/The Office (2005) [tvdbid-73244]' /downloads/the_office_s3_p1/ep*.mkv
 ```
 
 Add episodes to `/media/shows/The Office (2005) [tvdbid-73244]/Season 03`:
 
 ```sh
-$ epify add '/media/shows/The Office (2005) [tvdbid-73244]/Season 03' '/downloads/the_office_s3_ep23.mkv' '/downloads/the_office_s3_p2'
+$ epify add '/media/shows/The Office (2005) [tvdbid-73244]/Season 03' /downloads/the_office_s3_p2/ep*.mkv
 ```
