@@ -38,22 +38,13 @@
 package main
 
 import (
-	"cmp"
 	"flag"
 	"fmt"
-	"io/fs"
 	"log"
 	"os"
-	"path/filepath"
-	"regexp"
-	"slices"
-	"strconv"
-	"strings"
 
 	"github.com/matthewdargan/epify/internal/epify"
 )
-
-var re = regexp.MustCompile(`\d+`)
 
 func usage() {
 	fmt.Fprintf(os.Stderr, "usage:\n")
@@ -102,97 +93,14 @@ func main() {
 		if flag.NArg() < 3 {
 			usage()
 		}
-		seasonDir := args[1]
-		info, err := os.Stat(seasonDir)
-		if err != nil {
-			log.Fatal(err)
+		s := epify.SeasonAddition{
+			SeasonDir: args[1],
+			Episodes:  args[2:],
 		}
-		if !info.IsDir() {
-			log.Fatalf("%q is not a directory", seasonDir)
-		}
-		episodes := args[2:]
-		efis := make([]fs.FileInfo, len(episodes))
-		for i, e := range episodes {
-			info, err = os.Stat(e)
-			if err != nil {
-				log.Fatal(err)
-			}
-			efis[i] = info
-		}
-		if err = addEpisodes(seasonDir, efis); err != nil {
+		if err := epify.AddEpisodes(&s); err != nil {
 			log.Fatal(err)
 		}
 	default:
 		usage()
 	}
-}
-
-func addEpisodes(seasonDir string, episodes []fs.FileInfo) error {
-	if len(episodes) == 0 {
-		return fmt.Errorf("no episodes found")
-	}
-	base := filepath.Base(seasonDir)
-	season := strings.TrimLeft(base, "Season ")
-	if base == season {
-		return fmt.Errorf("invalid season directory %q", seasonDir)
-	}
-	eps := make([]fs.FileInfo, 0, len(episodes))
-	for _, e := range episodes {
-		if e.IsDir() {
-			ents, err := os.ReadDir(e.Name())
-			if err != nil {
-				return err
-			}
-			for _, ep := range ents {
-				info, err := ep.Info()
-				if err != nil {
-					return err
-				}
-				eps = append(eps, info)
-			}
-		} else {
-			eps = append(eps, e)
-		}
-	}
-	if err := sortEpisodes(eps); err != nil {
-		return err
-	}
-	ents, err := os.ReadDir(seasonDir)
-	if err != nil {
-		return err
-	}
-	prevEp := ents[len(ents)-1].Name()
-	i := strings.Index(prevEp, "E")
-	j := strings.Index(prevEp, ".")
-	if i == -1 || j == -1 || j >= i {
-		return fmt.Errorf("invalid episode %q", prevEp)
-	}
-	epn, err := strconv.Atoi(prevEp[i+1 : j])
-	if err != nil {
-		return err
-	}
-	for _, e := range eps {
-		epn++
-		name := e.Name()
-		ep := fmt.Sprintf("S%sE%02d%s", season, epn, filepath.Ext(name))
-		if err := os.Rename(name, filepath.Join(seasonDir, ep)); err != nil {
-			return err
-		}
-	}
-	return nil
-}
-
-func sortEpisodes(eps []fs.FileInfo) error {
-	for _, e := range eps {
-		name := e.Name()
-		if _, err := strconv.Atoi(re.FindString(name)); err != nil {
-			return fmt.Errorf("episode %q must contain number: %w", name, err)
-		}
-	}
-	slices.SortFunc(eps, func(a, b fs.FileInfo) int {
-		e1, _ := strconv.Atoi(re.FindString(a.Name()))
-		e2, _ := strconv.Atoi(re.FindString(b.Name()))
-		return cmp.Compare(e1, e2)
-	})
-	return nil
 }

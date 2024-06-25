@@ -187,3 +187,7 @@ func createEpisodes(t *testing.T, seasonDir string, eps []string) {
 		f.Close()
 	}
 }
+
+func TestAddEpisodes(t *testing.T) {
+	t.Parallel()
+}

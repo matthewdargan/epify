@@ -13,6 +13,7 @@ import (
 	"regexp"
 	"slices"
 	"strconv"
+	"strings"
 )
 
 // A Show represents a TV show.
@@ -50,6 +51,8 @@ type Season struct {
 	Episodes []string // The episodes to populate the season.
 }
 
+var errNoEpisodes = errors.New("no episodes found")
+
 // MkSeason populates a season directory with episodes. Episodes are labeled
 // like "Series Name S01E01.mkv".
 func MkSeason(s *Season) error {
@@ -65,7 +68,7 @@ func MkSeason(s *Season) error {
 		return fmt.Errorf("%q is not a directory", s.ShowDir)
 	}
 	if len(s.Episodes) == 0 {
-		return errors.New("no episodes found")
+		return errNoEpisodes
 	}
 	for _, e := range s.Episodes {
 		info, err = os.Stat(e)
@@ -87,6 +90,69 @@ func MkSeason(s *Season) error {
 	for i, e := range s.Episodes {
 		ep := fmt.Sprintf("S%02dE%02d%s", n, i+1, filepath.Ext(e))
 		if err := os.Rename(e, filepath.Join(seasonDir, ep)); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+// A SeasonAddition represents episodes to add to a season.
+type SeasonAddition struct {
+	SeasonDir string
+	Episodes  []string
+}
+
+// AddEpisodes adds episodes to a season directory, continuing at the previous
+// episode increment.
+func AddEpisodes(s *SeasonAddition) error {
+	info, err := os.Stat(s.SeasonDir)
+	if err != nil {
+		return fmt.Errorf("invalid season directory: %w", err)
+	}
+	if !info.IsDir() {
+		return fmt.Errorf("%q is not a directory", s.SeasonDir)
+	}
+	base := filepath.Base(s.SeasonDir)
+	season := strings.TrimLeft(base, "Season ")
+	if base == season {
+		return fmt.Errorf("invalid season directory %q", s.SeasonDir)
+	}
+	if len(s.Episodes) == 0 {
+		return errNoEpisodes
+	}
+	for _, e := range s.Episodes {
+		info, err = os.Stat(e)
+		if err != nil {
+			return fmt.Errorf("invalid episode: %w", err)
+		}
+		if info.IsDir() {
+			return fmt.Errorf("%q is a directory", e)
+		}
+	}
+	if err = sortEpisodes(s.Episodes); err != nil {
+		return err
+	}
+	ents, err := os.ReadDir(s.SeasonDir)
+	if err != nil {
+		return err
+	}
+	var epn int
+	if len(ents) > 0 {
+		prevEp := ents[len(ents)-1].Name()
+		i := strings.Index(prevEp, "E")
+		j := strings.Index(prevEp, ".")
+		if i == -1 || j == -1 || j >= i {
+			return fmt.Errorf("invalid episode %q", prevEp)
+		}
+		epn, err = strconv.Atoi(prevEp[i+1 : j])
+		if err != nil {
+			return fmt.Errorf("invalid episode number: %w", err)
+		}
+	}
+	for _, e := range s.Episodes {
+		epn++
+		ep := fmt.Sprintf("S%sE%02d%s", season, epn, filepath.Ext(e))
+		if err := os.Rename(e, filepath.Join(s.SeasonDir, ep)); err != nil {
 			return err
 		}
 	}
