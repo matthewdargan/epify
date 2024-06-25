@@ -188,6 +188,87 @@ func createEpisodes(t *testing.T, seasonDir string, eps []string) {
 	}
 }
 
+const (
+	cDir = iota + 1
+	cEps
+)
+
 func TestAddEpisodes(t *testing.T) {
 	t.Parallel()
+	tests := []struct {
+		name    string
+		add     *SeasonAddition
+		wantErr bool
+		create  int
+	}{
+		{
+			name:    "invalid season directory",
+			add:     &SeasonAddition{SeasonDir: "nonexistentdir"},
+			wantErr: true,
+		},
+		{
+			name:    "season file",
+			add:     &SeasonAddition{SeasonDir: "doc.go"},
+			wantErr: true,
+		},
+		{
+			name:    "season directory without prefix",
+			add:     &SeasonAddition{SeasonDir: "noprefix"},
+			wantErr: true,
+			create:  cDir,
+		},
+		{
+			name:    "invalid season number",
+			add:     &SeasonAddition{SeasonDir: "Season three"},
+			wantErr: true,
+			create:  cDir,
+		},
+		{
+			name:    "no episodes",
+			add:     &SeasonAddition{SeasonDir: "Season 03"},
+			wantErr: true,
+			create:  cDir,
+		},
+		{
+			name:    "invalid episode",
+			add:     &SeasonAddition{SeasonDir: "Season 03", Episodes: []string{"nonexistent.mkv"}},
+			wantErr: true,
+			create:  cDir,
+		},
+		{
+			name:    "episode directory",
+			add:     &SeasonAddition{SeasonDir: "Season 03", Episodes: []string{"epdir"}},
+			wantErr: true,
+			create:  cEps,
+		},
+		{
+			name:    "episode without number",
+			add:     &SeasonAddition{SeasonDir: "Season 03", Episodes: []string{"epx.mkv"}},
+			wantErr: true,
+			create:  cEps,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
+			if tt.create > cEps {
+				t.Fatal("invalid create")
+			}
+			if tt.create == cDir || tt.create == cEps {
+				dir := filepath.Join(os.TempDir(), tt.add.SeasonDir)
+				if err := os.MkdirAll(dir, 0o755); err != nil {
+					t.Fatal(err)
+				}
+				defer os.RemoveAll(dir)
+				tt.add.SeasonDir = dir
+			}
+			if tt.create == cEps {
+				createEpisodes(t, tt.add.SeasonDir, tt.add.Episodes)
+			}
+			err := AddEpisodes(tt.add)
+			if (err != nil) != tt.wantErr {
+				t.Errorf("AddEpisodes(%v) error = %v", tt.add, err)
+			}
+		})
+	}
 }

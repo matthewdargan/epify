@@ -113,9 +113,13 @@ func AddEpisodes(s *SeasonAddition) error {
 		return fmt.Errorf("%q is not a directory", s.SeasonDir)
 	}
 	base := filepath.Base(s.SeasonDir)
-	season := strings.TrimLeft(base, "Season ")
+	season := strings.TrimPrefix(base, "Season ")
 	if base == season {
 		return fmt.Errorf("invalid season directory %q", s.SeasonDir)
+	}
+	n, err := strconv.Atoi(season)
+	if err != nil {
+		return fmt.Errorf("invalid season: %w", err)
 	}
 	if len(s.Episodes) == 0 {
 		return errNoEpisodes
@@ -151,7 +155,7 @@ func AddEpisodes(s *SeasonAddition) error {
 	}
 	for _, e := range s.Episodes {
 		epn++
-		ep := fmt.Sprintf("S%sE%02d%s", season, epn, filepath.Ext(e))
+		ep := fmt.Sprintf("S%02dE%02d%s", n, epn, filepath.Ext(e))
 		if err := os.Rename(e, filepath.Join(s.SeasonDir, ep)); err != nil {
 			return err
 		}
