@@ -145,7 +145,7 @@ func AddEpisodes(s *SeasonAddition) error {
 		prevEp := ents[len(ents)-1].Name()
 		i := strings.Index(prevEp, "E")
 		j := strings.Index(prevEp, ".")
-		if i == -1 || j == -1 || j >= i {
+		if i == -1 || j == -1 || i >= j {
 			return fmt.Errorf("invalid episode %q", prevEp)
 		}
 		epn, err = strconv.Atoi(prevEp[i+1 : j])

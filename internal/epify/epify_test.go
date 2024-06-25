@@ -34,9 +34,8 @@ func TestMkShow(t *testing.T) {
 			wantErr: true,
 		},
 		{
-			name:    "valid show",
-			show:    &Show{Name: "The Office", Year: "2005", TVDBID: "73244"},
-			wantErr: false,
+			name: "valid show",
+			show: &Show{Name: "The Office", Year: "2005", TVDBID: "73244"},
 		},
 	}
 	for _, tt := range tests {
@@ -133,14 +132,12 @@ func TestMkSeason(t *testing.T) {
 				"ep96.mkv", "ep97.mkv", "ep98.mkv", "ep99.mkv", "ep100.mkv",
 				"ep101.mkv",
 			}},
-			wantErr: false,
-			create:  true,
+			create: true,
 		},
 		{
-			name:    "valid season 11",
-			season:  &Season{N: "11", Episodes: []string{"ep9.mp4", "ep10.mp4"}},
-			wantErr: false,
-			create:  true,
+			name:   "valid season 11",
+			season: &Season{N: "11", Episodes: []string{"ep9.mp4", "ep10.mp4"}},
+			create: true,
 		},
 	}
 	for _, tt := range tests {
@@ -196,10 +193,11 @@ const (
 func TestAddEpisodes(t *testing.T) {
 	t.Parallel()
 	tests := []struct {
-		name    string
-		add     *SeasonAddition
-		wantErr bool
-		create  int
+		name         string
+		add          *SeasonAddition
+		wantErr      bool
+		create       int
+		prevEpisodes []string
 	}{
 		{
 			name:    "invalid season directory",
@@ -247,6 +245,73 @@ func TestAddEpisodes(t *testing.T) {
 			wantErr: true,
 			create:  cEps,
 		},
+		{
+			name:         "previous episode missing E",
+			add:          &SeasonAddition{SeasonDir: "Season 10", Episodes: []string{"ep1.mkv"}},
+			wantErr:      true,
+			create:       cEps,
+			prevEpisodes: []string{"S0301.mkv"},
+		},
+		{
+			name:         "previous episode missing .",
+			add:          &SeasonAddition{SeasonDir: "Season 10", Episodes: []string{"ep1.mkv"}},
+			wantErr:      true,
+			create:       cEps,
+			prevEpisodes: []string{"S03E01mkv"},
+		},
+		{
+			name:         "previous episode malformed",
+			add:          &SeasonAddition{SeasonDir: "Season 10", Episodes: []string{"ep1.mkv"}},
+			wantErr:      true,
+			create:       cEps,
+			prevEpisodes: []string{"S03.01Emkv"},
+		},
+		{
+			name:         "previous episode invalid number",
+			add:          &SeasonAddition{SeasonDir: "Season 10", Episodes: []string{"ep1.mkv"}},
+			wantErr:      true,
+			create:       cEps,
+			prevEpisodes: []string{"S03E0A.mkv"},
+		},
+		{
+			name: "add to season 3",
+			add: &SeasonAddition{SeasonDir: "Season 3", Episodes: []string{
+				"ep1.mp4", "ep2.mp4", "ep3.mp4", "ep4.mp4", "ep5.mp4",
+				"ep6.mp4", "ep7.mp4", "ep8.mp4", "ep9.mp4", "ep10.mp4",
+				"ep11.mp4", "ep12.mp4", "ep13.mp4", "ep14.mp4", "ep15.mp4",
+				"ep16.mp4", "ep17.mp4", "ep18.mp4", "ep19.mp4", "ep20.mp4",
+				"ep21.mp4", "ep22.mp4", "ep23.mp4", "ep24.mp4", "ep25.mp4",
+				"ep26.mp4", "ep27.mp4", "ep28.mp4", "ep29.mp4", "ep30.mp4",
+				"ep31.mp4", "ep32.mp4", "ep33.mp4", "ep34.mp4", "ep35.mp4",
+				"ep36.mp4", "ep37.mp4", "ep38.mp4", "ep39.mp4", "ep40.mp4",
+				"ep41.mp4", "ep42.mp4", "ep43.mp4", "ep44.mp4", "ep45.mp4",
+				"ep46.mp4", "ep47.mp4", "ep48.mp4", "ep49.mp4", "ep50.mp4",
+				"ep51.mp4", "ep52.mp4", "ep53.mp4", "ep54.mp4", "ep55.mp4",
+				"ep56.mp4", "ep57.mp4", "ep58.mp4", "ep59.mp4", "ep60.mp4",
+				"ep61.mp4", "ep62.mp4", "ep63.mp4", "ep64.mp4", "ep65.mp4",
+				"ep66.mp4", "ep67.mp4", "ep68.mp4", "ep69.mp4", "ep70.mp4",
+				"ep71.mp4", "ep72.mp4", "ep73.mp4", "ep74.mp4", "ep75.mp4",
+				"ep76.mp4", "ep77.mp4", "ep78.mp4", "ep79.mp4", "ep80.mp4",
+				"ep81.mp4", "ep82.mp4", "ep83.mp4", "ep84.mp4", "ep85.mp4",
+				"ep86.mp4", "ep87.mp4", "ep88.mp4", "ep89.mp4", "ep90.mp4",
+				"ep91.mp4", "ep92.mp4", "ep93.mp4", "ep94.mp4", "ep95.mp4",
+				"ep96.mp4", "ep97.mp4", "ep98.mp4", "ep99.mp4", "ep100.mp4",
+				"ep101.mp4",
+			}},
+			create:       cEps,
+			prevEpisodes: []string{"S03E01.mkv"},
+		},
+		{
+			name:         "add to season 199",
+			add:          &SeasonAddition{SeasonDir: "Season 199", Episodes: []string{"ep102.avi", "ep103.mkv", "ep104.mp4"}},
+			create:       cEps,
+			prevEpisodes: []string{"S199E01.mp4", "S199E02.mkv", "S199E03.avi"},
+		},
+		{
+			name:   "new episodes",
+			add:    &SeasonAddition{SeasonDir: "Season 00", Episodes: []string{"ep9.avi", "ep10.avi"}},
+			create: cEps,
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -261,9 +326,17 @@ func TestAddEpisodes(t *testing.T) {
 				}
 				defer os.RemoveAll(dir)
 				tt.add.SeasonDir = dir
+				if len(tt.prevEpisodes) > 0 {
+					createEpisodes(t, tt.add.SeasonDir, tt.prevEpisodes)
+				}
 			}
 			if tt.create == cEps {
-				createEpisodes(t, tt.add.SeasonDir, tt.add.Episodes)
+				dir, err := os.MkdirTemp("", "season")
+				if err != nil {
+					t.Fatal(err)
+				}
+				defer os.RemoveAll(dir)
+				createEpisodes(t, dir, tt.add.Episodes)
 			}
 			err := AddEpisodes(tt.add)
 			if (err != nil) != tt.wantErr {
