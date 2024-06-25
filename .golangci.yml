@@ -11,6 +11,7 @@ linters:
 linters-settings:
   errcheck:
     exclude-functions:
+      - (*os.File).Close
       - os.RemoveAll
   govet:
     disable:
