@@ -185,18 +185,14 @@ func createEpisodes(t *testing.T, seasonDir string, eps []string) {
 	}
 }
 
-const (
-	cDir = iota + 1
-	cEps
-)
-
 func TestAddEpisodes(t *testing.T) {
 	t.Parallel()
 	tests := []struct {
 		name         string
 		add          *SeasonAddition
 		wantErr      bool
-		create       int
+		cDir         bool
+		cEpisodes    bool
 		prevEpisodes []string
 	}{
 		{
@@ -213,64 +209,70 @@ func TestAddEpisodes(t *testing.T) {
 			name:    "season directory without prefix",
 			add:     &SeasonAddition{SeasonDir: "noprefix"},
 			wantErr: true,
-			create:  cDir,
+			cDir:    true,
 		},
 		{
 			name:    "invalid season number",
 			add:     &SeasonAddition{SeasonDir: "Season three"},
 			wantErr: true,
-			create:  cDir,
+			cDir:    true,
 		},
 		{
 			name:    "no episodes",
 			add:     &SeasonAddition{SeasonDir: "Season 03"},
 			wantErr: true,
-			create:  cDir,
+			cDir:    true,
 		},
 		{
 			name:    "invalid episode",
 			add:     &SeasonAddition{SeasonDir: "Season 03", Episodes: []string{"nonexistent.mkv"}},
 			wantErr: true,
-			create:  cDir,
+			cDir:    true,
 		},
 		{
-			name:    "episode directory",
-			add:     &SeasonAddition{SeasonDir: "Season 03", Episodes: []string{"epdir"}},
-			wantErr: true,
-			create:  cEps,
+			name:      "episode directory",
+			add:       &SeasonAddition{SeasonDir: "Season 03", Episodes: []string{"epdir"}},
+			wantErr:   true,
+			cDir:      true,
+			cEpisodes: true,
 		},
 		{
-			name:    "episode without number",
-			add:     &SeasonAddition{SeasonDir: "Season 03", Episodes: []string{"epx.mkv"}},
-			wantErr: true,
-			create:  cEps,
+			name:      "episode without number",
+			add:       &SeasonAddition{SeasonDir: "Season 03", Episodes: []string{"epx.mkv"}},
+			wantErr:   true,
+			cDir:      true,
+			cEpisodes: true,
 		},
 		{
 			name:         "previous episode missing E",
 			add:          &SeasonAddition{SeasonDir: "Season 10", Episodes: []string{"ep1.mkv"}},
 			wantErr:      true,
-			create:       cEps,
+			cDir:         true,
+			cEpisodes:    true,
 			prevEpisodes: []string{"S0301.mkv"},
 		},
 		{
 			name:         "previous episode missing .",
 			add:          &SeasonAddition{SeasonDir: "Season 10", Episodes: []string{"ep1.mkv"}},
 			wantErr:      true,
-			create:       cEps,
+			cDir:         true,
+			cEpisodes:    true,
 			prevEpisodes: []string{"S03E01mkv"},
 		},
 		{
 			name:         "previous episode malformed",
 			add:          &SeasonAddition{SeasonDir: "Season 10", Episodes: []string{"ep1.mkv"}},
 			wantErr:      true,
-			create:       cEps,
+			cDir:         true,
+			cEpisodes:    true,
 			prevEpisodes: []string{"S03.01Emkv"},
 		},
 		{
 			name:         "previous episode invalid number",
 			add:          &SeasonAddition{SeasonDir: "Season 10", Episodes: []string{"ep1.mkv"}},
 			wantErr:      true,
-			create:       cEps,
+			cDir:         true,
+			cEpisodes:    true,
 			prevEpisodes: []string{"S03E0A.mkv"},
 		},
 		{
@@ -298,39 +300,37 @@ func TestAddEpisodes(t *testing.T) {
 				"ep96.mp4", "ep97.mp4", "ep98.mp4", "ep99.mp4", "ep100.mp4",
 				"ep101.mp4",
 			}},
-			create:       cEps,
+			cDir:         true,
+			cEpisodes:    true,
 			prevEpisodes: []string{"S03E01.mkv"},
 		},
 		{
 			name:         "add to season 199",
 			add:          &SeasonAddition{SeasonDir: "Season 199", Episodes: []string{"ep102.avi", "ep103.mkv", "ep104.mp4"}},
-			create:       cEps,
+			cDir:         true,
+			cEpisodes:    true,
 			prevEpisodes: []string{"S199E01.mp4", "S199E02.mkv", "S199E03.avi"},
 		},
 		{
-			name:   "new episodes",
-			add:    &SeasonAddition{SeasonDir: "Season 00", Episodes: []string{"ep9.avi", "ep10.avi"}},
-			create: cEps,
+			name:      "new episodes",
+			add:       &SeasonAddition{SeasonDir: "Season 00", Episodes: []string{"ep9.avi", "ep10.avi"}},
+			cDir:      true,
+			cEpisodes: true,
 		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
-			if tt.create > cEps {
-				t.Fatal("invalid create")
-			}
-			if tt.create == cDir || tt.create == cEps {
+			if tt.cDir {
 				dir := filepath.Join(os.TempDir(), tt.add.SeasonDir)
 				if err := os.MkdirAll(dir, 0o755); err != nil {
 					t.Fatal(err)
 				}
 				defer os.RemoveAll(dir)
 				tt.add.SeasonDir = dir
-				if len(tt.prevEpisodes) > 0 {
-					createEpisodes(t, tt.add.SeasonDir, tt.prevEpisodes)
-				}
+				createEpisodes(t, tt.add.SeasonDir, tt.prevEpisodes)
 			}
-			if tt.create == cEps {
+			if tt.cEpisodes {
 				dir, err := os.MkdirTemp("", "season")
 				if err != nil {
 					t.Fatal(err)
