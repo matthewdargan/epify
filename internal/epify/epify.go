@@ -67,6 +67,12 @@ func MkSeason(s *Season) error {
 	if !info.IsDir() {
 		return fmt.Errorf("%q is not a directory", s.ShowDir)
 	}
+	base := filepath.Base(s.ShowDir)
+	i := strings.Index(base, " (")
+	if i < 0 {
+		return fmt.Errorf("invalid show directory %q", s.ShowDir)
+	}
+	show := base[:i]
 	if len(s.Episodes) == 0 {
 		return errNoEpisodes
 	}
@@ -88,7 +94,7 @@ func MkSeason(s *Season) error {
 		return err
 	}
 	for i, e := range s.Episodes {
-		ep := fmt.Sprintf("S%02dE%02d%s", n, i+1, filepath.Ext(e))
+		ep := fmt.Sprintf("%s S%02dE%02d%s", show, n, i+1, filepath.Ext(e))
 		if err := os.Rename(e, filepath.Join(seasonDir, ep)); err != nil {
 			return err
 		}

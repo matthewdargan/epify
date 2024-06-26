@@ -65,10 +65,11 @@ func TestMkShow(t *testing.T) {
 func TestMkSeason(t *testing.T) {
 	t.Parallel()
 	tests := []struct {
-		name    string
-		season  *Season
-		wantErr bool
-		create  bool
+		name      string
+		season    *Season
+		wantErr   bool
+		cDir      bool
+		cEpisodes bool
 	}{
 		{
 			name:    "invalid season number",
@@ -86,30 +87,52 @@ func TestMkSeason(t *testing.T) {
 			wantErr: true,
 		},
 		{
-			name:    "no episodes",
-			season:  &Season{N: "3"},
+			name:    "show directory missing name",
+			season:  &Season{N: "3", ShowDir: "(2005) [tvdbid-73244]"},
 			wantErr: true,
+			cDir:    true,
+		},
+		{
+			name:    "show directory missing year",
+			season:  &Season{N: "3", ShowDir: "The Office [tvdbid-73244]"},
+			wantErr: true,
+			cDir:    true,
+		},
+		{
+			name:    "show directory missing space before year",
+			season:  &Season{N: "3", ShowDir: "The Office(2005) [tvdbid-73244]"},
+			wantErr: true,
+			cDir:    true,
+		},
+		{
+			name:    "no episodes",
+			season:  &Season{N: "3", ShowDir: "The Office (2005) [tvdbid-73244]"},
+			wantErr: true,
+			cDir:    true,
 		},
 		{
 			name:    "invalid episode",
-			season:  &Season{N: "3", Episodes: []string{"nonexistent.mkv"}},
+			season:  &Season{N: "3", ShowDir: "Game of Thrones (2011) [tvdbid-121361]", Episodes: []string{"nonexistent.mkv"}},
 			wantErr: true,
+			cDir:    true,
 		},
 		{
-			name:    "episode directory",
-			season:  &Season{N: "3", Episodes: []string{"epdir"}},
-			wantErr: true,
-			create:  true,
+			name:      "episode directory",
+			season:    &Season{N: "3", ShowDir: "Breaking Bad (2008) [tvdbid-81189]", Episodes: []string{"epdir"}},
+			wantErr:   true,
+			cDir:      true,
+			cEpisodes: true,
 		},
 		{
-			name:    "episode without number",
-			season:  &Season{N: "3", Episodes: []string{"epx.mkv"}},
-			wantErr: true,
-			create:  true,
+			name:      "episode without number",
+			season:    &Season{N: "3", ShowDir: "One Piece (1999) [tvdbid-81797]", Episodes: []string{"epx.mkv"}},
+			wantErr:   true,
+			cDir:      true,
+			cEpisodes: true,
 		},
 		{
 			name: "valid season 3",
-			season: &Season{N: "3", Episodes: []string{
+			season: &Season{N: "3", ShowDir: "Dragon Ball (1986) [tvdbid-76666]", Episodes: []string{
 				"ep1.mkv", "ep2.mkv", "ep3.mkv", "ep4.mkv", "ep5.mkv",
 				"ep6.mkv", "ep7.mkv", "ep8.mkv", "ep9.mkv", "ep10.mkv",
 				"ep11.mkv", "ep12.mkv", "ep13.mkv", "ep14.mkv", "ep15.mkv",
@@ -132,26 +155,28 @@ func TestMkSeason(t *testing.T) {
 				"ep96.mkv", "ep97.mkv", "ep98.mkv", "ep99.mkv", "ep100.mkv",
 				"ep101.mkv",
 			}},
-			create: true,
+			cDir:      true,
+			cEpisodes: true,
 		},
 		{
-			name:   "valid season 11",
-			season: &Season{N: "11", Episodes: []string{"ep9.mp4", "ep10.mp4"}},
-			create: true,
+			name:      "valid season 11",
+			season:    &Season{N: "11", ShowDir: "Steins;Gate (2011) [tvdbid-244061]", Episodes: []string{"ep9.mp4", "ep10.mp4"}},
+			cDir:      true,
+			cEpisodes: true,
 		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
-			if tt.season.ShowDir == "" {
-				dir, err := os.MkdirTemp("", "show")
-				if err != nil {
+			if tt.cDir {
+				dir := filepath.Join(os.TempDir(), tt.season.ShowDir)
+				if err := os.MkdirAll(dir, 0o755); err != nil {
 					t.Fatal(err)
 				}
 				defer os.RemoveAll(dir)
 				tt.season.ShowDir = dir
 			}
-			if tt.create {
+			if tt.cEpisodes {
 				dir, err := os.MkdirTemp("", "season")
 				if err != nil {
 					t.Fatal(err)
