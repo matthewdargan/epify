@@ -5,6 +5,7 @@
 package epify
 
 import (
+	"fmt"
 	"os"
 	"path/filepath"
 	"testing"
@@ -188,25 +189,25 @@ func TestMkSeason(t *testing.T) {
 			if (err != nil) != tt.wantErr {
 				t.Errorf("MkSeason(%v) error = %v", tt.season, err)
 			}
-		})
-	}
-}
-
-func createEpisodes(t *testing.T, seasonDir string, eps []string) {
-	for i, e := range eps {
-		path := filepath.Join(seasonDir, e)
-		eps[i] = path
-		if filepath.Ext(path) == "" {
-			if err := os.Mkdir(path, 0o755); err != nil {
-				t.Fatal(err)
+			if !tt.wantErr {
+				if len(tt.season.N) < 2 {
+					tt.season.N = "0" + tt.season.N
+				}
+				seasonDir := filepath.Join(tt.season.ShowDir, fmt.Sprintf("Season %s", tt.season.N))
+				if _, err := os.Stat(seasonDir); os.IsNotExist(err) {
+					t.Errorf("MkSeason(%v) = %v, want %v", tt.season, err, seasonDir)
+				}
+				ents, err := os.ReadDir(seasonDir)
+				if err != nil {
+					t.Fatal(err)
+				}
+				got := len(ents)
+				want := len(tt.season.Episodes)
+				if got != want {
+					t.Errorf("MkSeason(%v) = %v, want %v", tt.season, got, want)
+				}
 			}
-			continue
-		}
-		f, err := os.Create(path)
-		if err != nil {
-			t.Fatal(err)
-		}
-		f.Close()
+		})
 	}
 }
 
@@ -404,6 +405,38 @@ func TestAddEpisodes(t *testing.T) {
 			if (err != nil) != tt.wantErr {
 				t.Errorf("AddEpisodes(%v) error = %v", tt.add, err)
 			}
+			if !tt.wantErr {
+				if _, err := os.Stat(tt.add.SeasonDir); os.IsNotExist(err) {
+					t.Errorf("AddEpisodes(%v) = %v, want %v", tt.add, err, tt.add.SeasonDir)
+				}
+				ents, err := os.ReadDir(tt.add.SeasonDir)
+				if err != nil {
+					t.Fatal(err)
+				}
+				got := len(ents)
+				want := len(tt.prevEpisodes) + len(tt.add.Episodes)
+				if got != want {
+					t.Errorf("AddEpisodes(%v) = %v, want %v", tt.add, got, want)
+				}
+			}
 		})
+	}
+}
+
+func createEpisodes(t *testing.T, seasonDir string, eps []string) {
+	for i, e := range eps {
+		path := filepath.Join(seasonDir, e)
+		eps[i] = path
+		if filepath.Ext(path) == "" {
+			if err := os.Mkdir(path, 0o755); err != nil {
+				t.Fatal(err)
+			}
+			continue
+		}
+		f, err := os.Create(path)
+		if err != nil {
+			t.Fatal(err)
+		}
+		f.Close()
 	}
 }
