@@ -218,6 +218,7 @@ func TestAddEpisodes(t *testing.T) {
 		wantErr      bool
 		cDir         bool
 		cEpisodes    bool
+		showDir      string
 		prevEpisodes []string
 	}{
 		{
@@ -243,16 +244,39 @@ func TestAddEpisodes(t *testing.T) {
 			cDir:    true,
 		},
 		{
+			name:    "show directory missing name",
+			add:     &SeasonAddition{SeasonDir: "Season 03"},
+			wantErr: true,
+			cDir:    true,
+			showDir: "(2011) [tvdbid-121361]",
+		},
+		{
+			name:    "show directory missing year",
+			add:     &SeasonAddition{SeasonDir: "Season 03"},
+			wantErr: true,
+			cDir:    true,
+			showDir: "Game of Thrones [tvdbid-121361]",
+		},
+		{
+			name:    "show directory missing space before year",
+			add:     &SeasonAddition{SeasonDir: "Season 03"},
+			wantErr: true,
+			cDir:    true,
+			showDir: "Game of Thrones(2011) [tvdbid-121361]",
+		},
+		{
 			name:    "no episodes",
 			add:     &SeasonAddition{SeasonDir: "Season 03"},
 			wantErr: true,
 			cDir:    true,
+			showDir: "Game of Thrones (2011) [tvdbid-121361]",
 		},
 		{
 			name:    "invalid episode",
 			add:     &SeasonAddition{SeasonDir: "Season 03", Episodes: []string{"nonexistent.mkv"}},
 			wantErr: true,
 			cDir:    true,
+			showDir: "Cowboy Bebop (1998) [tvdbid-76885]",
 		},
 		{
 			name:      "episode directory",
@@ -260,6 +284,7 @@ func TestAddEpisodes(t *testing.T) {
 			wantErr:   true,
 			cDir:      true,
 			cEpisodes: true,
+			showDir:   "Neon Genesis Evangelion (1995) [tvdbid-70350]",
 		},
 		{
 			name:      "episode without number",
@@ -267,6 +292,7 @@ func TestAddEpisodes(t *testing.T) {
 			wantErr:   true,
 			cDir:      true,
 			cEpisodes: true,
+			showDir:   "Yu Yu Hakusho (1992) [tvdbid-76665]",
 		},
 		{
 			name:         "previous episode missing E",
@@ -274,15 +300,17 @@ func TestAddEpisodes(t *testing.T) {
 			wantErr:      true,
 			cDir:         true,
 			cEpisodes:    true,
-			prevEpisodes: []string{"S0301.mkv"},
+			showDir:      "Fullmetal Alchemist (2003) [tvdbid-75579]",
+			prevEpisodes: []string{"Fullmetal Alchemist S0301.mkv"},
 		},
 		{
-			name:         "previous episode missing .",
+			name:         "previous episode missing period",
 			add:          &SeasonAddition{SeasonDir: "Season 10", Episodes: []string{"ep1.mkv"}},
 			wantErr:      true,
 			cDir:         true,
 			cEpisodes:    true,
-			prevEpisodes: []string{"S03E01mkv"},
+			showDir:      "Fist of the North Star (1984) [tvdbid-79156]",
+			prevEpisodes: []string{"Fist of the North Star S03E01mkv"},
 		},
 		{
 			name:         "previous episode malformed",
@@ -290,7 +318,8 @@ func TestAddEpisodes(t *testing.T) {
 			wantErr:      true,
 			cDir:         true,
 			cEpisodes:    true,
-			prevEpisodes: []string{"S03.01Emkv"},
+			showDir:      "Berserk (1997) [tvdbid-73752]",
+			prevEpisodes: []string{"Berserk S03.01Emkv"},
 		},
 		{
 			name:         "previous episode invalid number",
@@ -298,7 +327,8 @@ func TestAddEpisodes(t *testing.T) {
 			wantErr:      true,
 			cDir:         true,
 			cEpisodes:    true,
-			prevEpisodes: []string{"S03E0A.mkv"},
+			showDir:      "Vinland Saga (2019) [tvdbid-359274]",
+			prevEpisodes: []string{"Vinland Saga S03E0A.mkv"},
 		},
 		{
 			name: "add to season 3",
@@ -327,31 +357,38 @@ func TestAddEpisodes(t *testing.T) {
 			}},
 			cDir:         true,
 			cEpisodes:    true,
-			prevEpisodes: []string{"S03E01.mkv"},
+			showDir:      "Dragon Ball Z (1989) [tvdbid-81472]",
+			prevEpisodes: []string{"Dragon Ball Z S03E01.mkv"},
 		},
 		{
 			name:         "add to season 199",
 			add:          &SeasonAddition{SeasonDir: "Season 199", Episodes: []string{"ep102.avi", "ep103.mkv", "ep104.mp4"}},
 			cDir:         true,
 			cEpisodes:    true,
-			prevEpisodes: []string{"S199E01.mp4", "S199E02.mkv", "S199E03.avi"},
+			showDir:      "Dragon Ball GT (1996) [tvdbid-79275]",
+			prevEpisodes: []string{"Dragon Ball GT S199E01.mp4", "Dragon Ball GT S199E02.mkv", "Dragon Ball GT S199E03.avi"},
 		},
 		{
 			name:      "new episodes",
 			add:       &SeasonAddition{SeasonDir: "Season 00", Episodes: []string{"ep9.avi", "ep10.avi"}},
 			cDir:      true,
 			cEpisodes: true,
+			showDir:   "Dragon Ball Super (2015) [tvdbid-295068]",
 		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
 			if tt.cDir {
-				dir := filepath.Join(os.TempDir(), tt.add.SeasonDir)
+				dir := filepath.Join(os.TempDir(), tt.showDir, tt.add.SeasonDir)
 				if err := os.MkdirAll(dir, 0o755); err != nil {
 					t.Fatal(err)
 				}
-				defer os.RemoveAll(dir)
+				base := dir
+				if tt.showDir != "" {
+					base = filepath.Join(os.TempDir(), tt.showDir)
+				}
+				defer os.RemoveAll(base)
 				tt.add.SeasonDir = dir
 				createEpisodes(t, tt.add.SeasonDir, tt.prevEpisodes)
 			}
