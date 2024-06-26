@@ -5,7 +5,6 @@
 package epify
 
 import (
-	"fmt"
 	"os"
 	"path/filepath"
 	"testing"
@@ -17,6 +16,7 @@ func TestMkShow(t *testing.T) {
 		name    string
 		show    *Show
 		wantErr bool
+		path    string
 	}{
 		{
 			name:    "empty name",
@@ -36,6 +36,7 @@ func TestMkShow(t *testing.T) {
 		{
 			name: "valid show",
 			show: &Show{Name: "The Office", Year: "2005", TVDBID: "73244"},
+			path: "The Office (2005) [tvdbid-73244]",
 		},
 	}
 	for _, tt := range tests {
@@ -52,8 +53,7 @@ func TestMkShow(t *testing.T) {
 				t.Errorf("MkShow(%v) error = %v", tt.show, err)
 			}
 			if !tt.wantErr {
-				path := fmt.Sprintf("%s (%s) [tvdbid-%s]", tt.show.Name, tt.show.Year, tt.show.TVDBID)
-				want := filepath.Join(tt.show.Dir, path)
+				want := filepath.Join(tt.show.Dir, tt.path)
 				if _, err := os.Stat(want); os.IsNotExist(err) {
 					t.Errorf("MkShow(%v) = %v, want %v", tt.show, err, want)
 				}
