@@ -46,9 +46,10 @@ func MkShow(s *Show) error {
 
 // A Season represents a season of a TV show.
 type Season struct {
-	N        string   // The season number.
-	ShowDir  string   // The show directory.
-	Episodes []string // The episodes to populate the season.
+	N          string   // The season number.
+	ShowDir    string   // The show directory.
+	Episodes   []string // The episodes to populate the season.
+	MatchIndex int      // The index of the episode number in the filename.
 }
 
 var errNoEpisodes = errors.New("no episodes found")
@@ -85,7 +86,7 @@ func MkSeason(s *Season) error {
 			return fmt.Errorf("%q is a directory", e)
 		}
 	}
-	if err = sortEpisodes(s.Episodes); err != nil {
+	if err = sortEpisodes(s.Episodes, s.MatchIndex); err != nil {
 		return err
 	}
 	path := fmt.Sprintf("Season %02d", n)
@@ -104,8 +105,9 @@ func MkSeason(s *Season) error {
 
 // A SeasonAddition represents episodes to add to a season.
 type SeasonAddition struct {
-	SeasonDir string
-	Episodes  []string
+	SeasonDir  string   // The season directory.
+	Episodes   []string // The episodes to add.
+	MatchIndex int      // The index of the episode number in the filename.
 }
 
 // AddEpisodes adds episodes to a season directory, continuing at the previous
@@ -146,7 +148,7 @@ func AddEpisodes(s *SeasonAddition) error {
 			return fmt.Errorf("%q is a directory", e)
 		}
 	}
-	if err = sortEpisodes(s.Episodes); err != nil {
+	if err = sortEpisodes(s.Episodes, s.MatchIndex); err != nil {
 		return err
 	}
 	ents, err := os.ReadDir(s.SeasonDir)
@@ -178,16 +180,23 @@ func AddEpisodes(s *SeasonAddition) error {
 
 var re = regexp.MustCompile(`\d+`)
 
-func sortEpisodes(eps []string) error {
+func sortEpisodes(eps []string, i int) error {
 	for _, e := range eps {
 		base := filepath.Base(e)
-		if _, err := strconv.Atoi(re.FindString(base)); err != nil {
+		m := re.FindAllString(base, -1)
+		if len(m) == 0 {
+			return fmt.Errorf("episode %q must contain number", e)
+		}
+		if i < 0 || i >= len(m) {
+			return fmt.Errorf("invalid match index %d", i)
+		}
+		if _, err := strconv.Atoi(m[i]); err != nil {
 			return fmt.Errorf("episode %q must contain number: %w", e, err)
 		}
 	}
 	slices.SortFunc(eps, func(a, b string) int {
-		e1, _ := strconv.Atoi(re.FindString(filepath.Base(a)))
-		e2, _ := strconv.Atoi(re.FindString(filepath.Base(b)))
+		e1, _ := strconv.Atoi(re.FindAllString(filepath.Base(a), -1)[i])
+		e2, _ := strconv.Atoi(re.FindAllString(filepath.Base(b), -1)[i])
 		return cmp.Compare(e1, e2)
 	})
 	return nil
