@@ -7,8 +7,8 @@
 // Usage:
 //
 //	epify show name year tvdbid dir
-//	epify season seasonnum showdir episode...
-//	epify add seasondir episode...
+//	epify season [-m index] seasonnum showdir episode...
+//	epify add [-m index] seasondir episode...
 //
 // `epify show` creates a show directory like
 // "Series Name (2018) [tvdbid-65567]".
@@ -18,6 +18,9 @@
 //
 // `epify add` adds episodes to a season directory, continuing at the previous
 // episode increment.
+//
+// The `-m` flag specifies the index of the episode number in filenames for
+// the `epify season` and `epify add` commands.
 //
 // Examples:
 //
@@ -30,9 +33,18 @@
 //
 //	$ epify season 3 '/media/shows/The Office (2005) [tvdbid-73244]' /downloads/the_office_s3_p1/ep*.mkv
 //
+// Populate season directory
+// `/media/shows/Breaking Bad (2008) [tvdbid-81189]/Season 04`:
+//
+//	$ epify season -m 1 4 '/media/shows/Breaking Bad (2008) [tvdbid-81189]' /downloads/breaking_bad_s4_p1/s4ep*.mkv
+//
 // Add episodes to `/media/shows/The Office (2005) [tvdbid-73244]/Season 03`:
 //
 //	$ epify add '/media/shows/The Office (2005) [tvdbid-73244]/Season 03' /downloads/the_office_s3_p2/ep*.mkv
+//
+// Add episodes to `/media/shows/Breaking Bad (2008) [tvdbid-81189]/Season 04`:
+//
+//	$ epify add -m 1 '/media/shows/Breaking Bad (2008) [tvdbid-81189]/Season 04' /downloads/breaking_bad_s4_p2/s4ep*.mkv
 //
 // [Jellyfin naming scheme]: https://jellyfin.org/docs/general/server/media/shows/
 package main
@@ -46,11 +58,18 @@ import (
 	"github.com/matthewdargan/epify/internal/epify"
 )
 
+var (
+	seasonCmd   = flag.NewFlagSet("season", flag.ExitOnError)
+	seasonMatch = seasonCmd.Int("m", 0, "match index")
+	addCmd      = flag.NewFlagSet("add", flag.ExitOnError)
+	addMatch    = addCmd.Int("m", 0, "match index")
+)
+
 func usage() {
 	fmt.Fprintf(os.Stderr, "usage:\n")
 	fmt.Fprintf(os.Stderr, "\tepify show name year tvdbid dir\n")
-	fmt.Fprintf(os.Stderr, "\tepify season seasonnum showdir episode...\n")
-	fmt.Fprintf(os.Stderr, "\tepify add seasondir episode...\n")
+	fmt.Fprintf(os.Stderr, "\tepify season [-m index] seasonnum showdir episode...\n")
+	fmt.Fprintf(os.Stderr, "\tepify add [-m index] seasondir episode...\n")
 	os.Exit(2)
 }
 
@@ -78,24 +97,34 @@ func main() {
 			log.Fatal(err)
 		}
 	case "season":
-		if flag.NArg() < 4 {
+		if err := seasonCmd.Parse(args[1:]); err != nil {
+			log.Fatal(err)
+		}
+		if seasonCmd.NArg() < 3 {
 			usage()
 		}
+		args = seasonCmd.Args()
 		s := epify.Season{
-			N:        args[1],
-			ShowDir:  args[2],
-			Episodes: args[3:],
+			N:          args[0],
+			ShowDir:    args[1],
+			Episodes:   args[2:],
+			MatchIndex: *seasonMatch,
 		}
 		if err := epify.MkSeason(&s); err != nil {
 			log.Fatal(err)
 		}
 	case "add":
-		if flag.NArg() < 3 {
+		if err := addCmd.Parse(args[1:]); err != nil {
+			log.Fatal(err)
+		}
+		if addCmd.NArg() < 2 {
 			usage()
 		}
+		args = addCmd.Args()
 		s := epify.SeasonAddition{
-			SeasonDir: args[1],
-			Episodes:  args[2:],
+			SeasonDir:  args[1],
+			Episodes:   args[2:],
+			MatchIndex: *addMatch,
 		}
 		if err := epify.AddEpisodes(&s); err != nil {
 			log.Fatal(err)

@@ -49,7 +49,7 @@ type Season struct {
 	N          string   // The season number.
 	ShowDir    string   // The show directory.
 	Episodes   []string // The episodes to populate the season.
-	MatchIndex int      // The index of the episode number in the filename.
+	MatchIndex int      // The index of the episode number in filenames.
 }
 
 var errNoEpisodes = errors.New("no episodes found")
@@ -107,7 +107,7 @@ func MkSeason(s *Season) error {
 type SeasonAddition struct {
 	SeasonDir  string   // The season directory.
 	Episodes   []string // The episodes to add.
-	MatchIndex int      // The index of the episode number in the filename.
+	MatchIndex int      // The index of the episode number in filenames.
 }
 
 // AddEpisodes adds episodes to a season directory, continuing at the previous
