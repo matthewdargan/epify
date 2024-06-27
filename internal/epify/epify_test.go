@@ -132,6 +132,27 @@ func TestMkSeason(t *testing.T) {
 			cEpisodes: true,
 		},
 		{
+			name:      "negative match index",
+			season:    &Season{N: "0", ShowDir: "Naruto (2002) [tvdbid-78857]", Episodes: []string{"ep1.mkv"}, MatchIndex: -1},
+			wantErr:   true,
+			cDir:      true,
+			cEpisodes: true,
+		},
+		{
+			name:      "match index 1 out of range",
+			season:    &Season{N: "3", ShowDir: "Naruto Shippuden (2007) [tvdbid-79824]", Episodes: []string{"ep1.mkv"}, MatchIndex: 1},
+			wantErr:   true,
+			cDir:      true,
+			cEpisodes: true,
+		},
+		{
+			name:      "match index 2 out of range",
+			season:    &Season{N: "300", ShowDir: "Samurai Champloo (2004) [tvdbid-79089]", Episodes: []string{"s1ep2.mkv"}, MatchIndex: 2},
+			wantErr:   true,
+			cDir:      true,
+			cEpisodes: true,
+		},
+		{
 			name: "valid season 3",
 			season: &Season{N: "3", ShowDir: "Dragon Ball (1986) [tvdbid-76666]", Episodes: []string{
 				"ep1.mkv", "ep2.mkv", "ep3.mkv", "ep4.mkv", "ep5.mkv",
@@ -162,6 +183,17 @@ func TestMkSeason(t *testing.T) {
 		{
 			name:      "valid season 11",
 			season:    &Season{N: "11", ShowDir: "Steins;Gate (2011) [tvdbid-244061]", Episodes: []string{"ep9.mp4", "ep10.mp4"}},
+			cDir:      true,
+			cEpisodes: true,
+		},
+		{
+			name: "match index 1",
+			season: &Season{
+				N:          "0",
+				ShowDir:    "Attack on Titan (2013) [tvdbid-514059]",
+				Episodes:   []string{"Attack on Titan S00E16.mkv", "Attack on Titan S00E15.mkv", "Attack on Titan S00E14.mkv"},
+				MatchIndex: 1,
+			},
 			cDir:      true,
 			cEpisodes: true,
 		},
@@ -296,13 +328,37 @@ func TestAddEpisodes(t *testing.T) {
 			showDir:   "Yu Yu Hakusho (1992) [tvdbid-76665]",
 		},
 		{
+			name:      "negative match index",
+			add:       &SeasonAddition{SeasonDir: "Season 00", Episodes: []string{"ep10.mkv"}, MatchIndex: -1},
+			wantErr:   true,
+			cDir:      true,
+			cEpisodes: true,
+			showDir:   "Hunter x Hunter (1999) [tvdbid-79076]",
+		},
+		{
+			name:      "match index 1 out of range",
+			add:       &SeasonAddition{SeasonDir: "Season 03", Episodes: []string{"ep100.mkv"}, MatchIndex: 1},
+			wantErr:   true,
+			cDir:      true,
+			cEpisodes: true,
+			showDir:   "Sailor Moon (1992) [tvdbid-78500]",
+		},
+		{
+			name:      "match index 2 out of range",
+			add:       &SeasonAddition{SeasonDir: "Season 300", Episodes: []string{"s300ep2.mkv"}, MatchIndex: 2},
+			wantErr:   true,
+			cDir:      true,
+			cEpisodes: true,
+			showDir:   "One-Punch Man (2015) [tvdbid-293088]",
+		},
+		{
 			name:         "previous episode missing E",
 			add:          &SeasonAddition{SeasonDir: "Season 10", Episodes: []string{"ep1.mkv"}},
 			wantErr:      true,
 			cDir:         true,
 			cEpisodes:    true,
 			showDir:      "Fullmetal Alchemist (2003) [tvdbid-75579]",
-			prevEpisodes: []string{"Fullmetal Alchemist S0301.mkv"},
+			prevEpisodes: []string{"Fullmetal Alchemist S1001.mkv"},
 		},
 		{
 			name:         "previous episode missing period",
@@ -311,7 +367,7 @@ func TestAddEpisodes(t *testing.T) {
 			cDir:         true,
 			cEpisodes:    true,
 			showDir:      "Fist of the North Star (1984) [tvdbid-79156]",
-			prevEpisodes: []string{"Fist of the North Star S03E01mkv"},
+			prevEpisodes: []string{"Fist of the North Star S10E01mkv"},
 		},
 		{
 			name:         "previous episode malformed",
@@ -320,7 +376,7 @@ func TestAddEpisodes(t *testing.T) {
 			cDir:         true,
 			cEpisodes:    true,
 			showDir:      "Berserk (1997) [tvdbid-73752]",
-			prevEpisodes: []string{"Berserk S03.01Emkv"},
+			prevEpisodes: []string{"Berserk S10.01Emkv"},
 		},
 		{
 			name:         "previous episode invalid number",
@@ -329,7 +385,7 @@ func TestAddEpisodes(t *testing.T) {
 			cDir:         true,
 			cEpisodes:    true,
 			showDir:      "Vinland Saga (2019) [tvdbid-359274]",
-			prevEpisodes: []string{"Vinland Saga S03E0A.mkv"},
+			prevEpisodes: []string{"Vinland Saga S10E0A.mkv"},
 		},
 		{
 			name: "add to season 3",
@@ -375,6 +431,17 @@ func TestAddEpisodes(t *testing.T) {
 			cDir:      true,
 			cEpisodes: true,
 			showDir:   "Dragon Ball Super (2015) [tvdbid-295068]",
+		},
+		{
+			name: "match index 2",
+			add: &SeasonAddition{
+				SeasonDir:  "Season 30",
+				Episodes:   []string{"Bleach 1S30E04.mkv", "Bleach 2S30E03.mkv", "Bleach 3S30E02.mkv", "Bleach 4S30E01.mkv"},
+				MatchIndex: 2,
+			},
+			cDir:      true,
+			cEpisodes: true,
+			showDir:   "Bleach (2004) [tvdbid-74796]",
 		},
 	}
 	for _, tt := range tests {
