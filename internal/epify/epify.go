@@ -54,6 +54,8 @@ type Season struct {
 
 var errNoEpisodes = errors.New("no episodes found")
 
+const yearPrefix = " ("
+
 // MkSeason populates a season directory with episodes. Episodes are labeled
 // like "Series Name S01E01.mkv".
 func MkSeason(s *Season) error {
@@ -68,12 +70,10 @@ func MkSeason(s *Season) error {
 	if !info.IsDir() {
 		return fmt.Errorf("%q is not a directory", s.ShowDir)
 	}
-	base := filepath.Base(s.ShowDir)
-	i := strings.Index(base, " (")
-	if i < 0 {
+	show, _, ok := strings.Cut(filepath.Base(s.ShowDir), yearPrefix)
+	if !ok {
 		return fmt.Errorf("invalid show directory %q", s.ShowDir)
 	}
-	show := base[:i]
 	if len(s.Episodes) == 0 {
 		return errNoEpisodes
 	}
@@ -130,12 +130,10 @@ func AddEpisodes(s *SeasonAddition) error {
 		return fmt.Errorf("invalid season: %w", err)
 	}
 	showDir := filepath.Dir(s.SeasonDir)
-	base = filepath.Base(showDir)
-	i := strings.Index(base, " (")
-	if i < 0 {
+	show, _, ok := strings.Cut(filepath.Base(showDir), yearPrefix)
+	if !ok {
 		return fmt.Errorf("invalid show directory %q", showDir)
 	}
-	show := base[:i]
 	if len(s.Episodes) == 0 {
 		return errNoEpisodes
 	}
