@@ -422,8 +422,8 @@ func TestAddEpisodes(t *testing.T) {
 			add:          &SeasonAddition{SeasonDir: "Season 199", Episodes: []string{"ep102.avi", "ep103.mkv", "ep104.mp4"}},
 			cDir:         true,
 			cEpisodes:    true,
-			showDir:      "Dragon Ball GT (1996) [tvdbid-79275]",
-			prevEpisodes: []string{"Dragon Ball GT S199E01.mp4", "Dragon Ball GT S199E02.mkv", "Dragon Ball GT S199E03.avi"},
+			showDir:      "Defenders of the Earth (1986) [tvdbid-70824]",
+			prevEpisodes: []string{"Defenders of the Earth S199E01.mp4", "Defenders of the Earth S199E02.mkv", "Defenders of the Earth S199E03.avi"},
 		},
 		{
 			name:      "new episodes",

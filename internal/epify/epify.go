@@ -110,6 +110,8 @@ type SeasonAddition struct {
 	MatchIndex int      // The index of the episode number in filenames.
 }
 
+var episodeRe = regexp.MustCompile(`E(\d+)\.`)
+
 // AddEpisodes adds episodes to a season directory, continuing at the previous
 // episode increment.
 func AddEpisodes(s *SeasonAddition) error {
@@ -156,15 +158,11 @@ func AddEpisodes(s *SeasonAddition) error {
 	var epn int
 	if len(ents) > 0 {
 		prevEp := ents[len(ents)-1].Name()
-		i := strings.Index(prevEp, "E")
-		j := strings.Index(prevEp, ".")
-		if i == -1 || j == -1 || i >= j {
+		m := episodeRe.FindStringSubmatch(prevEp)
+		if len(m) != 2 {
 			return fmt.Errorf("invalid episode %q", prevEp)
 		}
-		epn, err = strconv.Atoi(prevEp[i+1 : j])
-		if err != nil {
-			return fmt.Errorf("invalid episode number: %w", err)
-		}
+		epn, _ = strconv.Atoi(m[1])
 	}
 	for _, e := range s.Episodes {
 		epn++
@@ -187,9 +185,6 @@ func sortEpisodes(eps []string, i int) error {
 		}
 		if i < 0 || i >= len(m) {
 			return fmt.Errorf("invalid match index %d", i)
-		}
-		if _, err := strconv.Atoi(m[i]); err != nil {
-			return fmt.Errorf("episode %q must contain number: %w", e, err)
 		}
 	}
 	slices.SortFunc(eps, func(a, b string) int {
