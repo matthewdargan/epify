@@ -147,8 +147,8 @@ func main() {
 		}
 		args = addCmd.Args()
 		s := epify.SeasonAddition{
-			SeasonDir:  args[1],
-			Episodes:   args[2:],
+			SeasonDir:  args[0],
+			Episodes:   args[1:],
 			MatchIndex: *addMatch,
 		}
 		if err := epify.AddEpisodes(&s); err != nil {
