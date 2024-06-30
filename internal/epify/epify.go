@@ -16,16 +16,16 @@ import (
 	"strings"
 )
 
-// A Show represents a TV show.
-type Show struct {
-	Name   string // The name of the show.
-	Year   string // The year the show premiered.
-	TVDBID string // The TVDB ID of the show.
-	Dir    string // The directory to create the show in.
+// Media represents metadata for a show or movie.
+type Media struct {
+	Name string // The name of the media.
+	Year string // The year the media premiered.
+	ID   string // The ID of the media.
+	Dir  string // The directory to create the media in.
 }
 
 // MkShow creates a show directory like "Series Name (2018) [tvdbid-65567]".
-func MkShow(s *Show) error {
+func MkShow(s *Media) error {
 	if len(s.Name) == 0 {
 		return errors.New("empty show name")
 	}
@@ -33,12 +33,53 @@ func MkShow(s *Show) error {
 	if err != nil {
 		return fmt.Errorf("invalid year: %w", err)
 	}
-	tvdbid, err := strconv.Atoi(s.TVDBID)
+	tvdbid, err := strconv.Atoi(s.ID)
 	if err != nil {
 		return fmt.Errorf("invalid TVDBID: %w", err)
 	}
 	path := fmt.Sprintf("%s (%d) [tvdbid-%d]", s.Name, year, tvdbid)
 	if err := os.MkdirAll(filepath.Join(s.Dir, path), 0o755); err != nil {
+		return err
+	}
+	return nil
+}
+
+// A Movie represents a movie.
+type Movie struct {
+	Media
+	File string // The movie file to add.
+}
+
+// AddMovie adds a movie to a directory. Movies are labeled like
+// "Film (2018) [tmdbid-65567]".
+func AddMovie(m *Movie) error {
+	if len(m.Name) == 0 {
+		return errors.New("empty movie name")
+	}
+	year, err := strconv.Atoi(m.Year)
+	if err != nil {
+		return fmt.Errorf("invalid year: %w", err)
+	}
+	tmdbid, err := strconv.Atoi(m.ID)
+	if err != nil {
+		return fmt.Errorf("invalid TMDBID: %w", err)
+	}
+	info, err := os.Stat(m.Dir)
+	if err != nil {
+		return fmt.Errorf("invalid directory: %w", err)
+	}
+	if !info.IsDir() {
+		return fmt.Errorf("%q is not a directory", m.Dir)
+	}
+	info, err = os.Stat(m.File)
+	if err != nil {
+		return fmt.Errorf("invalid movie: %w", err)
+	}
+	if info.IsDir() {
+		return fmt.Errorf("%q is a directory", m.File)
+	}
+	path := fmt.Sprintf("%s (%d) [tmdbid-%d]%s", m.Name, year, tmdbid, filepath.Ext(m.File))
+	if err := os.Rename(m.File, filepath.Join(m.Dir, path)); err != nil {
 		return err
 	}
 	return nil
@@ -65,14 +106,14 @@ func MkSeason(s *Season) error {
 	}
 	info, err := os.Stat(s.ShowDir)
 	if err != nil {
-		return fmt.Errorf("invalid show directory: %w", err)
+		return fmt.Errorf("invalid directory: %w", err)
 	}
 	if !info.IsDir() {
 		return fmt.Errorf("%q is not a directory", s.ShowDir)
 	}
 	show, _, ok := strings.Cut(filepath.Base(s.ShowDir), yearPrefix)
 	if !ok {
-		return fmt.Errorf("invalid show directory %q", s.ShowDir)
+		return fmt.Errorf("invalid directory %q", s.ShowDir)
 	}
 	if len(s.Episodes) == 0 {
 		return errNoEpisodes

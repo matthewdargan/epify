@@ -6,11 +6,15 @@ Epify categorizes shows using the
 Usage:
 
     epify show name year tvdbid dir
+    epify movie name year tmdbid dir movie
     epify season [-m index] seasonnum showdir episode...
     epify add [-m index] seasondir episode...
 
 
 `epify show` creates a show directory like "Series Name (2018) [tvdbid-65567]".
+
+`epify movie` adds a movie to a directory. Movies are labeled like
+"Film (2018) [tmdbid-65567]".
 
 `epify season` populates a season directory with episodes. Episodes are labeled
 like "Series Name S01E01.mkv".
@@ -27,6 +31,12 @@ Create show directory `/media/shows/The Office (2005) [tvdbid-73244]`:
 
 ```sh
 $ epify show 'The Office' 2005 73244 '/media/shows'
+```
+
+Add movie to `/media/movies`:
+
+```sh
+$ epify movie 'Braveheart' 1995 197 '/media/movies' '/downloads/braveheart.mkv'
 ```
 
 Populate season directory

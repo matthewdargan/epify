@@ -7,11 +7,15 @@
 // Usage:
 //
 //	epify show name year tvdbid dir
+//	epify movie name year tmdbid dir movie
 //	epify season [-m index] seasonnum showdir episode...
 //	epify add [-m index] seasondir episode...
 //
 // `epify show` creates a show directory like
 // "Series Name (2018) [tvdbid-65567]".
+//
+// `epify movie` adds a movie to a directory. Movies are labeled like
+// "Film (2018) [tmdbid-65567]".
 //
 // `epify season` populates a season directory with episodes. Episodes are
 // labeled like "Series Name S01E01.mkv".
@@ -27,6 +31,10 @@
 // Create show directory `/media/shows/The Office (2005) [tvdbid-73244]`:
 //
 //	$ epify show 'The Office' 2005 73244 '/media/shows'
+//
+// Add movie to `/media/movies`:
+//
+//	$ epify movie 'Braveheart' 1995 197 '/media/movies' '/downloads/braveheart.mkv'
 //
 // Populate season directory
 // `/media/shows/The Office (2005) [tvdbid-73244]/Season 03`:
@@ -68,6 +76,7 @@ var (
 func usage() {
 	fmt.Fprintf(os.Stderr, "usage:\n")
 	fmt.Fprintf(os.Stderr, "\tepify show name year tvdbid dir\n")
+	fmt.Fprintf(os.Stderr, "\tepify movie name year tmdbid dir movie\n")
 	fmt.Fprintf(os.Stderr, "\tepify season [-m index] seasonnum showdir episode...\n")
 	fmt.Fprintf(os.Stderr, "\tepify add [-m index] seasondir episode...\n")
 	os.Exit(2)
@@ -87,13 +96,29 @@ func main() {
 		if flag.NArg() != 5 {
 			usage()
 		}
-		s := epify.Show{
-			Name:   args[1],
-			Year:   args[2],
-			TVDBID: args[3],
-			Dir:    args[4],
+		show := epify.Media{
+			Name: args[1],
+			Year: args[2],
+			ID:   args[3],
+			Dir:  args[4],
 		}
-		if err := epify.MkShow(&s); err != nil {
+		if err := epify.MkShow(&show); err != nil {
+			log.Fatal(err)
+		}
+	case "movie":
+		if flag.NArg() != 6 {
+			usage()
+		}
+		movie := epify.Movie{
+			Media: epify.Media{
+				Name: args[1],
+				Year: args[2],
+				ID:   args[3],
+				Dir:  args[4],
+			},
+			File: args[5],
+		}
+		if err := epify.AddMovie(&movie); err != nil {
 			log.Fatal(err)
 		}
 	case "season":

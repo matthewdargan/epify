@@ -15,28 +15,28 @@ func TestMkShow(t *testing.T) {
 	t.Parallel()
 	tests := []struct {
 		name    string
-		show    *Show
+		show    *Media
 		wantErr bool
 		path    string
 	}{
 		{
 			name:    "empty name",
-			show:    &Show{},
+			show:    &Media{},
 			wantErr: true,
 		},
 		{
 			name:    "invalid year",
-			show:    &Show{Name: "The Office", Year: "two thousand and five"},
+			show:    &Media{Name: "The Office", Year: "two thousand and five"},
 			wantErr: true,
 		},
 		{
 			name:    "invalid tvdbid",
-			show:    &Show{Name: "The Office", Year: "2005", TVDBID: "seven three two four four"},
+			show:    &Media{Name: "The Office", Year: "2005", ID: "seven three two four four"},
 			wantErr: true,
 		},
 		{
 			name: "valid show",
-			show: &Show{Name: "The Office", Year: "2005", TVDBID: "73244"},
+			show: &Media{Name: "The Office", Year: "2005", ID: "73244"},
 			path: "The Office (2005) [tvdbid-73244]",
 		},
 	}
@@ -63,6 +63,95 @@ func TestMkShow(t *testing.T) {
 	}
 }
 
+func TestAddMovie(t *testing.T) {
+	t.Parallel()
+	tests := []struct {
+		name    string
+		movie   *Movie
+		wantErr bool
+		cDir    bool
+		cMovie  bool
+		path    string
+	}{
+		{
+			name:    "empty name",
+			movie:   &Movie{},
+			wantErr: true,
+		},
+		{
+			name:    "invalid year",
+			movie:   &Movie{Media: Media{Name: "Braveheart", Year: "nineteen ninety five"}},
+			wantErr: true,
+		},
+		{
+			name:    "invalid tmdbid",
+			movie:   &Movie{Media: Media{Name: "Braveheart", Year: "2005", ID: "one nine seven"}},
+			wantErr: true,
+		},
+		{
+			name:    "invalid directory",
+			movie:   &Movie{Media: Media{Name: "Braveheart", Year: "2005", ID: "197", Dir: "nonexistentdir"}},
+			wantErr: true,
+		},
+		{
+			name:    "directory file",
+			movie:   &Movie{Media: Media{Name: "Braveheart", Year: "2005", ID: "197", Dir: "doc.go"}},
+			wantErr: true,
+		},
+		{
+			name:    "invalid movie",
+			movie:   &Movie{Media: Media{Name: "Braveheart", Year: "2005", ID: "197"}, File: "nonexistent.mkv"},
+			wantErr: true,
+			cDir:    true,
+		},
+		{
+			name:    "movie directory",
+			movie:   &Movie{Media: Media{Name: "Braveheart", Year: "2005", ID: "197"}, File: "moviedir"},
+			wantErr: true,
+			cDir:    true,
+			cMovie:  true,
+		},
+		{
+			name:   "valid movie",
+			movie:  &Movie{Media: Media{Name: "Braveheart", Year: "2005", ID: "197"}, File: "braveheart.mkv"},
+			cDir:   true,
+			cMovie: true,
+			path:   "Braveheart (2005) [tmdbid-197].mkv",
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
+			if tt.cDir {
+				dir, err := os.MkdirTemp("", "movie")
+				if err != nil {
+					t.Fatal(err)
+				}
+				defer os.RemoveAll(dir)
+				tt.movie.Dir = dir
+			}
+			if tt.cMovie {
+				dir, err := os.MkdirTemp("", "download")
+				if err != nil {
+					t.Fatal(err)
+				}
+				defer os.RemoveAll(dir)
+				tt.movie.File = createMedia(t, dir, tt.movie.File)[0]
+			}
+			err := AddMovie(tt.movie)
+			if (err != nil) != tt.wantErr {
+				t.Errorf("AddMovie(%v) error = %v", tt.movie, err)
+			}
+			if !tt.wantErr {
+				want := filepath.Join(tt.movie.Dir, tt.path)
+				if _, err := os.Stat(want); os.IsNotExist(err) {
+					t.Errorf("AddMovie(%v) = %v, want %v", tt.movie, err, want)
+				}
+			}
+		})
+	}
+}
+
 func TestMkSeason(t *testing.T) {
 	t.Parallel()
 	tests := []struct {
@@ -78,7 +167,7 @@ func TestMkSeason(t *testing.T) {
 			wantErr: true,
 		},
 		{
-			name:    "invalid show directory",
+			name:    "invalid directory",
 			season:  &Season{N: "3", ShowDir: "nonexistentdir"},
 			wantErr: true,
 		},
@@ -88,19 +177,19 @@ func TestMkSeason(t *testing.T) {
 			wantErr: true,
 		},
 		{
-			name:    "show directory missing name",
+			name:    "directory missing name",
 			season:  &Season{N: "3", ShowDir: "(2005) [tvdbid-73244]"},
 			wantErr: true,
 			cDir:    true,
 		},
 		{
-			name:    "show directory missing year",
+			name:    "directory missing year",
 			season:  &Season{N: "3", ShowDir: "The Office [tvdbid-73244]"},
 			wantErr: true,
 			cDir:    true,
 		},
 		{
-			name:    "show directory missing space before year",
+			name:    "directory missing space before year",
 			season:  &Season{N: "3", ShowDir: "The Office(2005) [tvdbid-73244]"},
 			wantErr: true,
 			cDir:    true,
@@ -215,7 +304,7 @@ func TestMkSeason(t *testing.T) {
 					t.Fatal(err)
 				}
 				defer os.RemoveAll(dir)
-				createEpisodes(t, dir, tt.season.Episodes)
+				tt.season.Episodes = createMedia(t, dir, tt.season.Episodes...)
 			}
 			err := MkSeason(tt.season)
 			if (err != nil) != tt.wantErr {
@@ -458,7 +547,7 @@ func TestAddEpisodes(t *testing.T) {
 				}
 				defer os.RemoveAll(base)
 				tt.add.SeasonDir = dir
-				createEpisodes(t, tt.add.SeasonDir, tt.prevEpisodes)
+				tt.prevEpisodes = createMedia(t, tt.add.SeasonDir, tt.prevEpisodes...)
 			}
 			if tt.cEpisodes {
 				dir, err := os.MkdirTemp("", "season")
@@ -466,7 +555,7 @@ func TestAddEpisodes(t *testing.T) {
 					t.Fatal(err)
 				}
 				defer os.RemoveAll(dir)
-				createEpisodes(t, dir, tt.add.Episodes)
+				tt.add.Episodes = createMedia(t, dir, tt.add.Episodes...)
 			}
 			err := AddEpisodes(tt.add)
 			if (err != nil) != tt.wantErr {
@@ -490,10 +579,11 @@ func TestAddEpisodes(t *testing.T) {
 	}
 }
 
-func createEpisodes(t *testing.T, seasonDir string, eps []string) {
-	for i, e := range eps {
-		path := filepath.Join(seasonDir, e)
-		eps[i] = path
+func createMedia(t *testing.T, dir string, ms ...string) []string {
+	ps := make([]string, len(ms))
+	for i, m := range ms {
+		path := filepath.Join(dir, m)
+		ps[i] = path
 		if filepath.Ext(path) == "" {
 			if err := os.Mkdir(path, 0o755); err != nil {
 				t.Fatal(err)
@@ -506,4 +596,5 @@ func createEpisodes(t *testing.T, seasonDir string, eps []string) {
 		}
 		f.Close()
 	}
+	return ps
 }
