@@ -1,7 +1,9 @@
 # Epify
 
-Epify categorizes shows using the
-[Jellyfin naming scheme](https://jellyfin.org/docs/general/server/media/shows/).
+Epify categorizes
+[shows](https://jellyfin.org/docs/general/server/media/shows/) and
+[movies](https://jellyfin.org/docs/general/server/media/movies/) using the
+Jellyfin naming scheme.
 
 Usage:
 

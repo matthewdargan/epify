@@ -2,7 +2,7 @@
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
 
-// Epify categorizes shows using the [Jellyfin naming scheme].
+// Epify categorizes [shows] and [movies] using the Jellyfin naming scheme.
 //
 // Usage:
 //
@@ -54,7 +54,8 @@
 //
 //	$ epify add -m 1 '/media/shows/Breaking Bad (2008) [tvdbid-81189]/Season 04' /downloads/breaking_bad_s4_p2/s4ep*.mkv
 //
-// [Jellyfin naming scheme]: https://jellyfin.org/docs/general/server/media/shows/
+// [shows]: https://jellyfin.org/docs/general/server/media/shows/
+// [movies]: https://jellyfin.org/docs/general/server/media/movies/
 package main
 
 import (
