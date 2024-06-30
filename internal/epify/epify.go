@@ -18,9 +18,9 @@ import (
 
 // Media represents metadata for a show or movie.
 type Media struct {
-	Name string // The name of the media.
+	Name string // The media name.
 	Year string // The year the media premiered.
-	ID   string // The ID of the media.
+	ID   string // The media ID.
 	Dir  string // The directory to create the media in.
 }
 
@@ -95,7 +95,8 @@ type Season struct {
 
 var errNoEpisodes = errors.New("no episodes found")
 
-const yearPrefix = " ("
+// YearPrefix is the prefix for a show directory.
+const YearPrefix = " ("
 
 // MkSeason populates a season directory with episodes. Episodes are labeled
 // like "Series Name S01E01.mkv".
@@ -111,7 +112,7 @@ func MkSeason(s *Season) error {
 	if !info.IsDir() {
 		return fmt.Errorf("%q is not a directory", s.ShowDir)
 	}
-	show, _, ok := strings.Cut(filepath.Base(s.ShowDir), yearPrefix)
+	show, _, ok := strings.Cut(filepath.Base(s.ShowDir), YearPrefix)
 	if !ok {
 		return fmt.Errorf("invalid directory %q", s.ShowDir)
 	}
@@ -173,7 +174,7 @@ func AddEpisodes(s *SeasonAddition) error {
 		return fmt.Errorf("invalid season: %w", err)
 	}
 	showDir := filepath.Dir(s.SeasonDir)
-	show, _, ok := strings.Cut(filepath.Base(showDir), yearPrefix)
+	show, _, ok := strings.Cut(filepath.Base(showDir), YearPrefix)
 	if !ok {
 		return fmt.Errorf("invalid show directory %q", showDir)
 	}
