@@ -28,7 +28,7 @@
         packages = {
           epify = inputs'.nix-go.legacyPackages.buildGoModule {
             meta = with lib; {
-              description = "Categorize media using the Jellyfin naming scheme";
+              description = "Categorize shows and movies using the Jellyfin naming scheme";
               homepage = "https://github.com/matthewdargan/epify";
               license = licenses.bsd3;
               maintainers = with maintainers; [matthewdargan];
@@ -40,7 +40,7 @@
           };
           trdone = inputs'.nix-go.legacyPackages.buildGoModule {
             meta = with lib; {
-              description = "Categorize completed Transmission downloads";
+              description = "Organize completed torrent downloads";
               homepage = "https://github.com/matthewdargan/epify";
               license = licenses.bsd3;
               maintainers = with maintainers; [matthewdargan];

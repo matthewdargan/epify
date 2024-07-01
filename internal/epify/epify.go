@@ -2,6 +2,11 @@
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
 
+// Package epify provides facilities for categorizing [shows] and [movies]
+// using the Jellyfin naming scheme.
+//
+// [shows]: https://jellyfin.org/docs/general/server/media/shows/
+// [movies]: https://jellyfin.org/docs/general/server/media/movies/
 package epify
 
 import (
