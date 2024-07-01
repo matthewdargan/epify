@@ -29,16 +29,8 @@ import (
 	"fmt"
 	"log"
 	"os"
-	"path/filepath"
-	"strconv"
-	"strings"
 
-	"github.com/matthewdargan/epify/internal/epify"
-)
-
-var (
-	trDir  = os.Getenv("TR_TORRENT_DIR")
-	trName = os.Getenv("TR_TORRENT_NAME")
+	"github.com/matthewdargan/epify/internal/torrent"
 )
 
 func usage() {
@@ -51,82 +43,15 @@ func main() {
 	log.SetFlags(0)
 	flag.Usage = usage
 	flag.Parse()
-	switch {
-	case flag.NArg() != 1:
+	if flag.NArg() != 1 {
 		usage()
-	case trDir == "":
-		log.Fatal("$TR_TORRENT_DIR is not defined")
-	case trName == "":
-		log.Fatal("$TR_TORRENT_NAME is not defined")
 	}
-	dir := flag.Arg(0)
-	info, err := os.Stat(dir)
-	if err != nil {
-		log.Fatal(err)
+	f := torrent.File{
+		Dir:    os.Getenv("TR_TORRENT_DIR"),
+		Name:   os.Getenv("TR_TORRENT_NAME"),
+		DstDir: flag.Arg(0),
 	}
-	if !info.IsDir() {
-		log.Fatalf("%q is not a directory", dir)
-	}
-	ents, err := os.ReadDir(dir)
-	if err != nil {
-		log.Fatal(err)
-	}
-	if len(ents) == 0 {
-		log.Fatalf("%q is empty", dir)
-	}
-	var showDir string
-	for _, e := range ents {
-		if !e.IsDir() {
-			continue
-		}
-		name := e.Name()
-		show, _, ok := strings.Cut(name, epify.YearPrefix)
-		if !ok {
-			continue
-		}
-		if strings.Contains(trName, show) {
-			showDir = filepath.Join(dir, name)
-			break
-		}
-	}
-	if showDir == "" {
-		log.Fatalf("no corresponding show directory for %q", trName)
-	}
-	ents, err = os.ReadDir(showDir)
-	if err != nil {
-		log.Fatal(err)
-	}
-	if len(ents) == 0 {
-		log.Fatalf("%q is empty", showDir)
-	}
-	var seasonDir string
-	var largest int
-	for _, e := range ents {
-		if !e.IsDir() {
-			continue
-		}
-		name := e.Name()
-		season := strings.TrimPrefix(name, "Season ")
-		if name == season {
-			continue
-		}
-		n, err := strconv.Atoi(season)
-		if err != nil {
-			log.Fatalf("invalid season: %v", err)
-		}
-		if n > largest {
-			largest = n
-			seasonDir = filepath.Join(showDir, name)
-		}
-	}
-	if seasonDir == "" {
-		log.Fatalf("no season directory in %q", showDir)
-	}
-	s := epify.SeasonAddition{
-		SeasonDir: seasonDir,
-		Episodes:  []string{filepath.Join(trDir, trName)},
-	}
-	if err := epify.AddEpisodes(&s); err != nil {
+	if err := torrent.Rename(&f); err != nil {
 		log.Fatal(err)
 	}
 }

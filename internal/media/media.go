@@ -2,12 +2,12 @@
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
 
-// Package epify provides facilities for categorizing [shows] and [movies]
+// Package media provides facilities for categorizing [shows] and [movies]
 // using the Jellyfin naming scheme.
 //
 // [shows]: https://jellyfin.org/docs/general/server/media/shows/
 // [movies]: https://jellyfin.org/docs/general/server/media/movies/
-package epify
+package media
 
 import (
 	"cmp"
@@ -21,16 +21,14 @@ import (
 	"strings"
 )
 
-// Media represents metadata for a show or movie.
-type Media struct {
-	Name string // The media name.
-	Year string // The year the media premiered.
-	ID   string // The media ID.
-	Dir  string // The directory to create the media in.
+// A Show represents a TV show.
+type Show struct {
+	Name, Year, ID, Dir string
 }
 
-// MkShow creates a show directory like "Series Name (2018) [tvdbid-65567]".
-func MkShow(s *Media) error {
+// MkShow creates a show directory. The directory will be labeled like
+// "Series Name (2018) [tvdbid-65567]".
+func MkShow(s *Show) error {
 	if len(s.Name) == 0 {
 		return errors.New("empty show name")
 	}
@@ -51,8 +49,8 @@ func MkShow(s *Media) error {
 
 // A Movie represents a movie.
 type Movie struct {
-	Media
-	File string // The movie file to add.
+	Show
+	File string
 }
 
 // AddMovie adds a movie to a directory. Movies are labeled like
@@ -90,21 +88,20 @@ func AddMovie(m *Movie) error {
 	return nil
 }
 
-// A Season represents a season of a TV show.
+// A Season represents a TV show season.
 type Season struct {
-	N          string   // The season number.
-	ShowDir    string   // The show directory.
-	Episodes   []string // The episodes to populate the season.
-	MatchIndex int      // The index of the episode number in filenames.
+	N          string // season number
+	ShowDir    string
+	Episodes   []string
+	MatchIndex int // index of the episode number in filenames
 }
 
 var errNoEpisodes = errors.New("no episodes found")
 
-// YearPrefix is the prefix for a show directory.
-const YearPrefix = " ("
+const YearSep = " (" // YearSep separates the show name from the year.
 
-// MkSeason populates a season directory with episodes. Episodes are labeled
-// like "Series Name S01E01.mkv".
+// MkSeason creates a season directory and moves episodes into it. Episodes are
+// labeled like "Series Name S01E01.mkv".
 func MkSeason(s *Season) error {
 	n, err := strconv.Atoi(s.N)
 	if err != nil {
@@ -117,7 +114,7 @@ func MkSeason(s *Season) error {
 	if !info.IsDir() {
 		return fmt.Errorf("%q is not a directory", s.ShowDir)
 	}
-	show, _, ok := strings.Cut(filepath.Base(s.ShowDir), YearPrefix)
+	show, _, ok := strings.Cut(filepath.Base(s.ShowDir), YearSep)
 	if !ok {
 		return fmt.Errorf("invalid directory %q", s.ShowDir)
 	}
@@ -150,43 +147,43 @@ func MkSeason(s *Season) error {
 	return nil
 }
 
-// A SeasonAddition represents episodes to add to a season.
-type SeasonAddition struct {
-	SeasonDir  string   // The season directory.
-	Episodes   []string // The episodes to add.
-	MatchIndex int      // The index of the episode number in filenames.
+// An Addition represents episodes to add to a season.
+type Addition struct {
+	SeasonDir  string
+	Episodes   []string
+	MatchIndex int // index of the episode number in filenames
 }
 
 var episodeRe = regexp.MustCompile(`E(\d+)\.`)
 
-// AddEpisodes adds episodes to a season directory, continuing at the previous
-// episode increment.
-func AddEpisodes(s *SeasonAddition) error {
-	info, err := os.Stat(s.SeasonDir)
+// AddEpisodes adds episodes to a season directory. Episode numbers continue at
+// the previous episode increment.
+func AddEpisodes(a *Addition) error {
+	info, err := os.Stat(a.SeasonDir)
 	if err != nil {
 		return fmt.Errorf("invalid season directory: %w", err)
 	}
 	if !info.IsDir() {
-		return fmt.Errorf("%q is not a directory", s.SeasonDir)
+		return fmt.Errorf("%q is not a directory", a.SeasonDir)
 	}
-	base := filepath.Base(s.SeasonDir)
+	base := filepath.Base(a.SeasonDir)
 	season := strings.TrimPrefix(base, "Season ")
 	if base == season {
-		return fmt.Errorf("invalid season directory %q", s.SeasonDir)
+		return fmt.Errorf("invalid season directory %q", a.SeasonDir)
 	}
 	n, err := strconv.Atoi(season)
 	if err != nil {
 		return fmt.Errorf("invalid season: %w", err)
 	}
-	showDir := filepath.Dir(s.SeasonDir)
-	show, _, ok := strings.Cut(filepath.Base(showDir), YearPrefix)
+	showDir := filepath.Dir(a.SeasonDir)
+	show, _, ok := strings.Cut(filepath.Base(showDir), YearSep)
 	if !ok {
 		return fmt.Errorf("invalid show directory %q", showDir)
 	}
-	if len(s.Episodes) == 0 {
+	if len(a.Episodes) == 0 {
 		return errNoEpisodes
 	}
-	for _, e := range s.Episodes {
+	for _, e := range a.Episodes {
 		info, err = os.Stat(e)
 		if err != nil {
 			return fmt.Errorf("invalid episode: %w", err)
@@ -195,10 +192,10 @@ func AddEpisodes(s *SeasonAddition) error {
 			return fmt.Errorf("%q is a directory", e)
 		}
 	}
-	if err = sortEpisodes(s.Episodes, s.MatchIndex); err != nil {
+	if err = sortEpisodes(a.Episodes, a.MatchIndex); err != nil {
 		return err
 	}
-	ents, err := os.ReadDir(s.SeasonDir)
+	ents, err := os.ReadDir(a.SeasonDir)
 	if err != nil {
 		return err
 	}
@@ -211,10 +208,10 @@ func AddEpisodes(s *SeasonAddition) error {
 		}
 		epn, _ = strconv.Atoi(m[1])
 	}
-	for _, e := range s.Episodes {
+	for _, e := range a.Episodes {
 		epn++
 		ep := fmt.Sprintf("%s S%02dE%02d%s", show, n, epn, filepath.Ext(e))
-		if err := os.Rename(e, filepath.Join(s.SeasonDir, ep)); err != nil {
+		if err := os.Rename(e, filepath.Join(a.SeasonDir, ep)); err != nil {
 			return err
 		}
 	}

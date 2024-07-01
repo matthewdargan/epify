@@ -64,7 +64,7 @@ import (
 	"log"
 	"os"
 
-	"github.com/matthewdargan/epify/internal/epify"
+	"github.com/matthewdargan/epify/internal/media"
 )
 
 var (
@@ -97,21 +97,21 @@ func main() {
 		if flag.NArg() != 5 {
 			usage()
 		}
-		show := epify.Media{
+		s := media.Show{
 			Name: args[1],
 			Year: args[2],
 			ID:   args[3],
 			Dir:  args[4],
 		}
-		if err := epify.MkShow(&show); err != nil {
+		if err := media.MkShow(&s); err != nil {
 			log.Fatal(err)
 		}
 	case "movie":
 		if flag.NArg() != 6 {
 			usage()
 		}
-		movie := epify.Movie{
-			Media: epify.Media{
+		m := media.Movie{
+			Show: media.Show{
 				Name: args[1],
 				Year: args[2],
 				ID:   args[3],
@@ -119,7 +119,7 @@ func main() {
 			},
 			File: args[5],
 		}
-		if err := epify.AddMovie(&movie); err != nil {
+		if err := media.AddMovie(&m); err != nil {
 			log.Fatal(err)
 		}
 	case "season":
@@ -130,13 +130,13 @@ func main() {
 			usage()
 		}
 		args = seasonCmd.Args()
-		s := epify.Season{
+		s := media.Season{
 			N:          args[0],
 			ShowDir:    args[1],
 			Episodes:   args[2:],
 			MatchIndex: *seasonMatch,
 		}
-		if err := epify.MkSeason(&s); err != nil {
+		if err := media.MkSeason(&s); err != nil {
 			log.Fatal(err)
 		}
 	case "add":
@@ -147,12 +147,12 @@ func main() {
 			usage()
 		}
 		args = addCmd.Args()
-		s := epify.SeasonAddition{
+		a := media.Addition{
 			SeasonDir:  args[0],
 			Episodes:   args[1:],
 			MatchIndex: *addMatch,
 		}
-		if err := epify.AddEpisodes(&s); err != nil {
+		if err := media.AddEpisodes(&a); err != nil {
 			log.Fatal(err)
 		}
 	default:
