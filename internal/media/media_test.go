@@ -95,7 +95,7 @@ func TestAddMovie(t *testing.T) {
 		},
 		{
 			name:    "directory file",
-			m:       &Movie{Show: Show{Name: "Braveheart", Year: "2005", ID: "197", Dir: "doc.go"}},
+			m:       &Movie{Show: Show{Name: "Braveheart", Year: "2005", ID: "197", Dir: "media.go"}},
 			wantErr: true,
 		},
 		{
@@ -173,7 +173,7 @@ func TestMkSeason(t *testing.T) {
 		},
 		{
 			name:    "show file",
-			s:       &Season{N: "3", ShowDir: "doc.go"},
+			s:       &Season{N: "3", ShowDir: "media.go"},
 			wantErr: true,
 		},
 		{
@@ -350,7 +350,7 @@ func TestAddEpisodes(t *testing.T) {
 		},
 		{
 			name:    "season file",
-			a:       &Addition{SeasonDir: "doc.go"},
+			a:       &Addition{SeasonDir: "media.go"},
 			wantErr: true,
 		},
 		{
