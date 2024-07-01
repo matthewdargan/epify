@@ -6,7 +6,8 @@
 package torrent
 
 import (
-	"log"
+	"errors"
+	"fmt"
 	"os"
 	"path/filepath"
 	"strconv"
@@ -17,26 +18,24 @@ import (
 
 // A File represents a torrent file.
 type File struct {
-	Dir    string
-	Name   string
-	DstDir string
+	Dir, Name, DstDir string
 }
 
 // Rename renames a torrent to an episode in a season directory.
 func Rename(t *File) error {
 	info, err := os.Stat(t.Dir)
 	if err != nil {
-		log.Fatal(err)
+		return fmt.Errorf("invalid directory: %w", err)
 	}
 	if !info.IsDir() {
-		log.Fatalf("%q is not a directory", t.Dir)
+		return fmt.Errorf("%q is not a directory", t.Dir)
 	}
 	ents, err := os.ReadDir(t.Dir)
 	if err != nil {
-		log.Fatal(err)
+		return err
 	}
 	if len(ents) == 0 {
-		log.Fatalf("%q is empty", t.Dir)
+		return errors.New("no shows found")
 	}
 	var showDir string
 	for _, e := range ents {
@@ -54,14 +53,14 @@ func Rename(t *File) error {
 		}
 	}
 	if showDir == "" {
-		log.Fatalf("no corresponding show directory for %q", t.Name)
+		return fmt.Errorf("no show directory for %q", t.Name)
 	}
 	ents, err = os.ReadDir(showDir)
 	if err != nil {
-		log.Fatal(err)
+		return err
 	}
 	if len(ents) == 0 {
-		log.Fatalf("%q is empty", showDir)
+		return errors.New("no seasons found")
 	}
 	var seasonDir string
 	var largest int
@@ -76,7 +75,7 @@ func Rename(t *File) error {
 		}
 		n, err := strconv.Atoi(season)
 		if err != nil {
-			log.Fatalf("invalid season: %v", err)
+			return fmt.Errorf("invalid season: %w", err)
 		}
 		if n > largest {
 			largest = n
@@ -84,14 +83,14 @@ func Rename(t *File) error {
 		}
 	}
 	if seasonDir == "" {
-		log.Fatalf("no season directory in %q", showDir)
+		return fmt.Errorf("no season directory in %q", showDir)
 	}
 	a := media.Addition{
 		SeasonDir: seasonDir,
 		Episodes:  []string{filepath.Join(t.Dir, t.Name)},
 	}
 	if err := media.AddEpisodes(&a); err != nil {
-		log.Fatal(err)
+		return err
 	}
 	return nil
 }
