@@ -122,11 +122,7 @@ func TestRename(t *testing.T) {
 				}
 				defer os.RemoveAll(dir)
 				tt.f.Dir = dir
-				f, err := os.Create(filepath.Join(tt.f.Dir, tt.f.Name))
-				if err != nil {
-					t.Fatal(err)
-				}
-				f.Close()
+				test.SetupFiles(t, tt.f.Dir, tt.f.Name)
 			}
 			tt.showDirs = test.SetupFiles(t, tt.f.DstDir, tt.showDirs...)
 			// tt.showDirs[0] should be the valid show directory
