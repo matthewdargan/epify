@@ -23,14 +23,14 @@ type File struct {
 
 // Rename renames a torrent to an episode in a season directory.
 func Rename(t *File) error {
-	info, err := os.Stat(t.Dir)
+	info, err := os.Stat(t.DstDir)
 	if err != nil {
 		return fmt.Errorf("invalid directory: %w", err)
 	}
 	if !info.IsDir() {
-		return fmt.Errorf("%q is not a directory", t.Dir)
+		return fmt.Errorf("%q is not a directory", t.DstDir)
 	}
-	ents, err := os.ReadDir(t.Dir)
+	ents, err := os.ReadDir(t.DstDir)
 	if err != nil {
 		return err
 	}
@@ -48,7 +48,7 @@ func Rename(t *File) error {
 			continue
 		}
 		if strings.Contains(t.Name, show) {
-			showDir = filepath.Join(t.Dir, name)
+			showDir = filepath.Join(t.DstDir, name)
 			break
 		}
 	}
