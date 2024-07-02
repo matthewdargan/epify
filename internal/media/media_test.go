@@ -9,8 +9,6 @@ import (
 	"os"
 	"path/filepath"
 	"testing"
-
-	"github.com/matthewdargan/epify/internal/test"
 )
 
 func TestMkShow(t *testing.T) {
@@ -138,7 +136,7 @@ func TestAddMovie(t *testing.T) {
 					t.Fatal(err)
 				}
 				defer os.RemoveAll(dir)
-				tt.m.File = test.SetupFiles(t, dir, tt.m.File)[0]
+				tt.m.File = setupFiles(t, dir, tt.m.File)[0]
 			}
 			err := AddMovie(tt.m)
 			if (err != nil) != tt.wantErr {
@@ -306,7 +304,7 @@ func TestMkSeason(t *testing.T) {
 					t.Fatal(err)
 				}
 				defer os.RemoveAll(dir)
-				tt.s.Episodes = test.SetupFiles(t, dir, tt.s.Episodes...)
+				tt.s.Episodes = setupFiles(t, dir, tt.s.Episodes...)
 			}
 			err := MkSeason(tt.s)
 			if (err != nil) != tt.wantErr {
@@ -549,7 +547,7 @@ func TestAddEpisodes(t *testing.T) {
 				}
 				defer os.RemoveAll(base)
 				tt.a.SeasonDir = dir
-				tt.prevEpisodes = test.SetupFiles(t, tt.a.SeasonDir, tt.prevEpisodes...)
+				tt.prevEpisodes = setupFiles(t, tt.a.SeasonDir, tt.prevEpisodes...)
 			}
 			if tt.cEpisodes {
 				dir, err := os.MkdirTemp("", "season")
@@ -557,7 +555,7 @@ func TestAddEpisodes(t *testing.T) {
 					t.Fatal(err)
 				}
 				defer os.RemoveAll(dir)
-				tt.a.Episodes = test.SetupFiles(t, dir, tt.a.Episodes...)
+				tt.a.Episodes = setupFiles(t, dir, tt.a.Episodes...)
 			}
 			err := AddEpisodes(tt.a)
 			if (err != nil) != tt.wantErr {
@@ -579,4 +577,25 @@ func TestAddEpisodes(t *testing.T) {
 			}
 		})
 	}
+}
+
+func setupFiles(t *testing.T, dir string, fs ...string) []string {
+	t.Helper()
+	ps := make([]string, len(fs))
+	for i, m := range fs {
+		path := filepath.Join(dir, m)
+		ps[i] = path
+		if filepath.Ext(path) == "" {
+			if err := os.Mkdir(path, 0o755); err != nil {
+				t.Fatal(err)
+			}
+			continue
+		}
+		f, err := os.Create(path)
+		if err != nil {
+			t.Fatal(err)
+		}
+		f.Close()
+	}
+	return ps
 }

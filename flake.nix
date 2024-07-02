@@ -25,31 +25,17 @@
           packages = [inputs'.nix-go.packages.go inputs'.nix-go.packages.golangci-lint];
           shellHook = "${config.pre-commit.installationScript}";
         };
-        packages = {
-          epify = inputs'.nix-go.legacyPackages.buildGoModule {
-            meta = with lib; {
-              description = "Categorize shows and movies using the Jellyfin naming scheme";
-              homepage = "https://github.com/matthewdargan/epify";
-              license = licenses.bsd3;
-              maintainers = with maintainers; [matthewdargan];
-            };
-            pname = "epify";
-            src = ./.;
-            vendorHash = null;
-            version = "0.1.0";
+        packages.epify = inputs'.nix-go.legacyPackages.buildGoModule {
+          meta = with lib; {
+            description = "Categorize shows and movies using the Jellyfin naming scheme";
+            homepage = "https://github.com/matthewdargan/epify";
+            license = licenses.bsd3;
+            maintainers = with maintainers; [matthewdargan];
           };
-          trdone = inputs'.nix-go.legacyPackages.buildGoModule {
-            meta = with lib; {
-              description = "Organize completed torrent downloads";
-              homepage = "https://github.com/matthewdargan/epify";
-              license = licenses.bsd3;
-              maintainers = with maintainers; [matthewdargan];
-            };
-            pname = "trdone";
-            src = ./.;
-            vendorHash = null;
-            version = "0.1.0";
-          };
+          pname = "epify";
+          src = ./.;
+          vendorHash = null;
+          version = "0.1.0";
         };
         pre-commit = {
           settings = {

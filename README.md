@@ -1,7 +1,5 @@
 # Epify
 
-## Epify
-
 Epify categorizes
 [shows](https://jellyfin.org/docs/general/server/media/shows/) and
 [movies](https://jellyfin.org/docs/general/server/media/movies/) using the
@@ -29,7 +27,7 @@ episode increment.
 The `-m` flag specifies the index of the episode number in filenames for the
 `epify season` and `epify add` commands.
 
-### Examples
+## Examples
 
 Create show directory `/media/shows/The Office (2005) [tvdbid-73244]`:
 
@@ -67,28 +65,4 @@ Add episodes to `/media/shows/Breaking Bad (2008) [tvdbid-81189]/Season 04`:
 
 ```sh
 $ epify add -m 1 '/media/shows/Breaking Bad (2008) [tvdbid-81189]/Season 04' /downloads/breaking_bad_s4_p2/s4ep*.mkv
-```
-
-## Trdone
-
-Trdone organizes completed torrent downloads.
-
-Usage:
-
-    trdone dir
-
-Trdone should be used with the `script-torrent-done-enabled` and
-`script-torrent-done-filename`
-[Transmission settings](https://github.com/transmission/transmission/blob/main/docs/Editing-Configuration-Files.md#misc).
-
-The `TR_TORRENT_DIR` and `TR_TORRENT_NAME`
-[environment variables](https://github.com/transmission/transmission/blob/main/docs/Scripts.md#on-torrent-completion)
-must be defined.
-
-### Example
-
-Move completed downloads into respective show directories in `/media/shows`:
-
-```sh
-$ trdone '/media/shows'
 ```
