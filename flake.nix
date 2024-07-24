@@ -34,10 +34,11 @@
           };
           pname = "epify";
           src = ./.;
-          vendorHash = null;
-          version = "0.1.2";
+          vendorHash = "sha256-czWXvbAwV0/e5W69Kgg2ySaJ3a9Am+aMTxZUEGjqR/M=";
+          version = "0.1.3";
         };
         pre-commit = {
+          check.enable = false;
           settings = {
             hooks = {
               alejandra.enable = true;

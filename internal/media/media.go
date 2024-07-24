@@ -19,6 +19,8 @@ import (
 	"slices"
 	"strconv"
 	"strings"
+
+	"golang.org/x/sync/errgroup"
 )
 
 // A Show represents a TV show.
@@ -138,13 +140,14 @@ func MkSeason(s *Season) error {
 	if err = os.Mkdir(seasonDir, 0o755); err != nil {
 		return err
 	}
+	var g errgroup.Group
 	for i, e := range s.Episodes {
-		ep := fmt.Sprintf("%s S%02dE%02d%s", show, n, i+1, filepath.Ext(e))
-		if err := os.Rename(e, filepath.Join(seasonDir, ep)); err != nil {
-			return err
-		}
+		g.Go(func() error {
+			ep := fmt.Sprintf("%s S%02dE%02d%s", show, n, i+1, filepath.Ext(e))
+			return os.Rename(e, filepath.Join(seasonDir, ep))
+		})
 	}
-	return nil
+	return g.Wait()
 }
 
 // An Addition represents episodes to add to a season.
@@ -208,14 +211,14 @@ func AddEpisodes(a *Addition) error {
 		}
 		epn, _ = strconv.Atoi(m[1])
 	}
-	for _, e := range a.Episodes {
-		epn++
-		ep := fmt.Sprintf("%s S%02dE%02d%s", show, n, epn, filepath.Ext(e))
-		if err := os.Rename(e, filepath.Join(a.SeasonDir, ep)); err != nil {
-			return err
-		}
+	var g errgroup.Group
+	for i, e := range a.Episodes {
+		g.Go(func() error {
+			ep := fmt.Sprintf("%s S%02dE%02d%s", show, n, epn+i+1, filepath.Ext(e))
+			return os.Rename(e, filepath.Join(a.SeasonDir, ep))
+		})
 	}
-	return nil
+	return g.Wait()
 }
 
 var re = regexp.MustCompile(`\d+`)
