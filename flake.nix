@@ -35,7 +35,7 @@
           pname = "epify";
           src = ./.;
           vendorHash = "sha256-czWXvbAwV0/e5W69Kgg2ySaJ3a9Am+aMTxZUEGjqR/M=";
-          version = "0.1.3";
+          version = "0.2.0";
         };
         pre-commit = {
           check.enable = false;

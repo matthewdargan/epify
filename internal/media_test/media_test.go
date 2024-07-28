@@ -2,41 +2,43 @@
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
 
-package media
+package media_test
 
 import (
 	"fmt"
 	"os"
 	"path/filepath"
 	"testing"
+
+	"github.com/matthewdargan/epify/internal/media"
 )
 
 func TestMkShow(t *testing.T) {
 	t.Parallel()
 	tests := []struct {
 		name    string
-		s       *Show
+		s       media.Show
 		wantErr bool
 		path    string
 	}{
 		{
 			name:    "empty name",
-			s:       &Show{},
+			s:       media.Show{},
 			wantErr: true,
 		},
 		{
 			name:    "invalid year",
-			s:       &Show{Name: "The Office", Year: "two thousand and five"},
+			s:       media.Show{Name: "The Office", Year: "two thousand and five"},
 			wantErr: true,
 		},
 		{
 			name:    "invalid tvdbid",
-			s:       &Show{Name: "The Office", Year: "2005", ID: "seven three two four four"},
+			s:       media.Show{Name: "The Office", Year: "2005", ID: "seven three two four four"},
 			wantErr: true,
 		},
 		{
 			name: "valid show",
-			s:    &Show{Name: "The Office", Year: "2005", ID: "73244"},
+			s:    media.Show{Name: "The Office", Year: "2005", ID: "73244"},
 			path: "The Office (2005) [tvdbid-73244]",
 		},
 	}
@@ -49,7 +51,7 @@ func TestMkShow(t *testing.T) {
 			}
 			defer os.RemoveAll(dir)
 			tt.s.Dir = dir
-			err = MkShow(tt.s)
+			err = media.MkShow(tt.s)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("MkShow(%v) error = %v", tt.s, err)
 			}
@@ -67,7 +69,7 @@ func TestAddMovie(t *testing.T) {
 	t.Parallel()
 	tests := []struct {
 		name    string
-		m       *Movie
+		m       media.Movie
 		wantErr bool
 		cDir    bool
 		cMovie  bool
@@ -75,45 +77,45 @@ func TestAddMovie(t *testing.T) {
 	}{
 		{
 			name:    "empty name",
-			m:       &Movie{},
+			m:       media.Movie{},
 			wantErr: true,
 		},
 		{
 			name:    "invalid year",
-			m:       &Movie{Show: Show{Name: "Braveheart", Year: "nineteen ninety five"}},
+			m:       media.Movie{Show: media.Show{Name: "Braveheart", Year: "nineteen ninety five"}},
 			wantErr: true,
 		},
 		{
 			name:    "invalid tmdbid",
-			m:       &Movie{Show: Show{Name: "Braveheart", Year: "2005", ID: "one nine seven"}},
+			m:       media.Movie{Show: media.Show{Name: "Braveheart", Year: "2005", ID: "one nine seven"}},
 			wantErr: true,
 		},
 		{
 			name:    "invalid directory",
-			m:       &Movie{Show: Show{Name: "Braveheart", Year: "2005", ID: "197", Dir: "nonexistentdir"}},
+			m:       media.Movie{Show: media.Show{Name: "Braveheart", Year: "2005", ID: "197", Dir: "nonexistentdir"}},
 			wantErr: true,
 		},
 		{
 			name:    "directory file",
-			m:       &Movie{Show: Show{Name: "Braveheart", Year: "2005", ID: "197", Dir: "media.go"}},
+			m:       media.Movie{Show: media.Show{Name: "Braveheart", Year: "2005", ID: "197", Dir: "media.go"}},
 			wantErr: true,
 		},
 		{
 			name:    "invalid movie",
-			m:       &Movie{Show: Show{Name: "Braveheart", Year: "2005", ID: "197"}, File: "nonexistent.mkv"},
+			m:       media.Movie{Show: media.Show{Name: "Braveheart", Year: "2005", ID: "197"}, File: "nonexistent.mkv"},
 			wantErr: true,
 			cDir:    true,
 		},
 		{
 			name:    "movie directory",
-			m:       &Movie{Show: Show{Name: "Braveheart", Year: "2005", ID: "197"}, File: "moviedir"},
+			m:       media.Movie{Show: media.Show{Name: "Braveheart", Year: "2005", ID: "197"}, File: "moviedir"},
 			wantErr: true,
 			cDir:    true,
 			cMovie:  true,
 		},
 		{
 			name:   "valid movie",
-			m:      &Movie{Show: Show{Name: "Braveheart", Year: "2005", ID: "197"}, File: "braveheart.mkv"},
+			m:      media.Movie{Show: media.Show{Name: "Braveheart", Year: "2005", ID: "197"}, File: "braveheart.mkv"},
 			cDir:   true,
 			cMovie: true,
 			path:   "Braveheart (2005) [tmdbid-197].mkv",
@@ -138,7 +140,7 @@ func TestAddMovie(t *testing.T) {
 				defer os.RemoveAll(dir)
 				tt.m.File = setupFiles(t, dir, tt.m.File)[0]
 			}
-			err := AddMovie(tt.m)
+			err := media.AddMovie(tt.m)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("AddMovie(%v) error = %v", tt.m, err)
 			}
@@ -156,94 +158,94 @@ func TestMkSeason(t *testing.T) {
 	t.Parallel()
 	tests := []struct {
 		name      string
-		s         *Season
+		s         media.Season
 		wantErr   bool
 		cDir      bool
 		cEpisodes bool
 	}{
 		{
 			name:    "invalid season number",
-			s:       &Season{N: "three"},
+			s:       media.Season{N: "three"},
 			wantErr: true,
 		},
 		{
 			name:    "invalid directory",
-			s:       &Season{N: "3", ShowDir: "nonexistentdir"},
+			s:       media.Season{N: "3", ShowDir: "nonexistentdir"},
 			wantErr: true,
 		},
 		{
 			name:    "show file",
-			s:       &Season{N: "3", ShowDir: "media.go"},
+			s:       media.Season{N: "3", ShowDir: "media.go"},
 			wantErr: true,
 		},
 		{
 			name:    "directory missing name",
-			s:       &Season{N: "3", ShowDir: "(2005) [tvdbid-73244]"},
+			s:       media.Season{N: "3", ShowDir: "(2005) [tvdbid-73244]"},
 			wantErr: true,
 			cDir:    true,
 		},
 		{
 			name:    "directory missing year",
-			s:       &Season{N: "3", ShowDir: "The Office [tvdbid-73244]"},
+			s:       media.Season{N: "3", ShowDir: "The Office [tvdbid-73244]"},
 			wantErr: true,
 			cDir:    true,
 		},
 		{
 			name:    "directory missing space before year",
-			s:       &Season{N: "3", ShowDir: "The Office(2005) [tvdbid-73244]"},
+			s:       media.Season{N: "3", ShowDir: "The Office(2005) [tvdbid-73244]"},
 			wantErr: true,
 			cDir:    true,
 		},
 		{
 			name:    "no episodes",
-			s:       &Season{N: "3", ShowDir: "The Office (2005) [tvdbid-73244]"},
+			s:       media.Season{N: "3", ShowDir: "The Office (2005) [tvdbid-73244]"},
 			wantErr: true,
 			cDir:    true,
 		},
 		{
 			name:    "invalid episode",
-			s:       &Season{N: "3", ShowDir: "Game of Thrones (2011) [tvdbid-121361]", Episodes: []string{"nonexistent.mkv"}},
+			s:       media.Season{N: "3", ShowDir: "Game of Thrones (2011) [tvdbid-121361]", Episodes: []string{"nonexistent.mkv"}},
 			wantErr: true,
 			cDir:    true,
 		},
 		{
 			name:      "episode directory",
-			s:         &Season{N: "3", ShowDir: "Breaking Bad (2008) [tvdbid-81189]", Episodes: []string{"epdir"}},
+			s:         media.Season{N: "3", ShowDir: "Breaking Bad (2008) [tvdbid-81189]", Episodes: []string{"epdir"}},
 			wantErr:   true,
 			cDir:      true,
 			cEpisodes: true,
 		},
 		{
 			name:      "episode without number",
-			s:         &Season{N: "3", ShowDir: "One Piece (1999) [tvdbid-81797]", Episodes: []string{"epx.mkv"}},
+			s:         media.Season{N: "3", ShowDir: "One Piece (1999) [tvdbid-81797]", Episodes: []string{"epx.mkv"}},
 			wantErr:   true,
 			cDir:      true,
 			cEpisodes: true,
 		},
 		{
 			name:      "negative match index",
-			s:         &Season{N: "0", ShowDir: "Naruto (2002) [tvdbid-78857]", Episodes: []string{"ep1.mkv"}, MatchIndex: -1},
+			s:         media.Season{N: "0", ShowDir: "Naruto (2002) [tvdbid-78857]", Episodes: []string{"ep1.mkv"}, MatchIndex: -1},
 			wantErr:   true,
 			cDir:      true,
 			cEpisodes: true,
 		},
 		{
 			name:      "match index 1 out of range",
-			s:         &Season{N: "3", ShowDir: "Naruto Shippuden (2007) [tvdbid-79824]", Episodes: []string{"ep1.mkv"}, MatchIndex: 1},
+			s:         media.Season{N: "3", ShowDir: "Naruto Shippuden (2007) [tvdbid-79824]", Episodes: []string{"ep1.mkv"}, MatchIndex: 1},
 			wantErr:   true,
 			cDir:      true,
 			cEpisodes: true,
 		},
 		{
 			name:      "match index 2 out of range",
-			s:         &Season{N: "300", ShowDir: "Samurai Champloo (2004) [tvdbid-79089]", Episodes: []string{"s1ep2.mkv"}, MatchIndex: 2},
+			s:         media.Season{N: "300", ShowDir: "Samurai Champloo (2004) [tvdbid-79089]", Episodes: []string{"s1ep2.mkv"}, MatchIndex: 2},
 			wantErr:   true,
 			cDir:      true,
 			cEpisodes: true,
 		},
 		{
 			name: "valid season 3",
-			s: &Season{N: "3", ShowDir: "Dragon Ball (1986) [tvdbid-76666]", Episodes: []string{
+			s: media.Season{N: "3", ShowDir: "Dragon Ball (1986) [tvdbid-76666]", Episodes: []string{
 				"ep1.mkv", "ep2.mkv", "ep3.mkv", "ep4.mkv", "ep5.mkv",
 				"ep6.mkv", "ep7.mkv", "ep8.mkv", "ep9.mkv", "ep10.mkv",
 				"ep11.mkv", "ep12.mkv", "ep13.mkv", "ep14.mkv", "ep15.mkv",
@@ -271,13 +273,13 @@ func TestMkSeason(t *testing.T) {
 		},
 		{
 			name:      "valid season 11",
-			s:         &Season{N: "11", ShowDir: "Steins;Gate (2011) [tvdbid-244061]", Episodes: []string{"ep9.mp4", "ep10.mp4"}},
+			s:         media.Season{N: "11", ShowDir: "Steins;Gate (2011) [tvdbid-244061]", Episodes: []string{"ep9.mp4", "ep10.mp4"}},
 			cDir:      true,
 			cEpisodes: true,
 		},
 		{
 			name: "match index 1",
-			s: &Season{
+			s: media.Season{
 				N:          "0",
 				ShowDir:    "Attack on Titan (2013) [tvdbid-514059]",
 				Episodes:   []string{"Attack on Titan S00E16.mkv", "Attack on Titan S00E15.mkv", "Attack on Titan S00E14.mkv"},
@@ -306,7 +308,7 @@ func TestMkSeason(t *testing.T) {
 				defer os.RemoveAll(dir)
 				tt.s.Episodes = setupFiles(t, dir, tt.s.Episodes...)
 			}
-			err := MkSeason(tt.s)
+			err := media.MkSeason(tt.s)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("MkSeason(%v) error = %v", tt.s, err)
 			}
@@ -336,7 +338,7 @@ func TestAddEpisodes(t *testing.T) {
 	t.Parallel()
 	tests := []struct {
 		name         string
-		a            *Addition
+		a            media.Addition
 		wantErr      bool
 		cDir         bool
 		cEpisodes    bool
@@ -345,64 +347,64 @@ func TestAddEpisodes(t *testing.T) {
 	}{
 		{
 			name:    "invalid season directory",
-			a:       &Addition{SeasonDir: "nonexistentdir"},
+			a:       media.Addition{SeasonDir: "nonexistentdir"},
 			wantErr: true,
 		},
 		{
 			name:    "season file",
-			a:       &Addition{SeasonDir: "media.go"},
+			a:       media.Addition{SeasonDir: "media.go"},
 			wantErr: true,
 		},
 		{
 			name:    "season directory without prefix",
-			a:       &Addition{SeasonDir: "noprefix"},
+			a:       media.Addition{SeasonDir: "noprefix"},
 			wantErr: true,
 			cDir:    true,
 		},
 		{
 			name:    "invalid season number",
-			a:       &Addition{SeasonDir: "Season three"},
+			a:       media.Addition{SeasonDir: "Season three"},
 			wantErr: true,
 			cDir:    true,
 		},
 		{
 			name:    "show directory missing name",
-			a:       &Addition{SeasonDir: "Season 03"},
+			a:       media.Addition{SeasonDir: "Season 03"},
 			wantErr: true,
 			cDir:    true,
 			showDir: "(2011) [tvdbid-121361]",
 		},
 		{
 			name:    "show directory missing year",
-			a:       &Addition{SeasonDir: "Season 03"},
+			a:       media.Addition{SeasonDir: "Season 03"},
 			wantErr: true,
 			cDir:    true,
 			showDir: "Game of Thrones [tvdbid-121361]",
 		},
 		{
 			name:    "show directory missing space before year",
-			a:       &Addition{SeasonDir: "Season 03"},
+			a:       media.Addition{SeasonDir: "Season 03"},
 			wantErr: true,
 			cDir:    true,
 			showDir: "Game of Thrones(2011) [tvdbid-121361]",
 		},
 		{
 			name:    "no episodes",
-			a:       &Addition{SeasonDir: "Season 03"},
+			a:       media.Addition{SeasonDir: "Season 03"},
 			wantErr: true,
 			cDir:    true,
 			showDir: "Game of Thrones (2011) [tvdbid-121361]",
 		},
 		{
 			name:    "invalid episode",
-			a:       &Addition{SeasonDir: "Season 03", Episodes: []string{"nonexistent.mkv"}},
+			a:       media.Addition{SeasonDir: "Season 03", Episodes: []string{"nonexistent.mkv"}},
 			wantErr: true,
 			cDir:    true,
 			showDir: "Cowboy Bebop (1998) [tvdbid-76885]",
 		},
 		{
 			name:      "episode directory",
-			a:         &Addition{SeasonDir: "Season 03", Episodes: []string{"epdir"}},
+			a:         media.Addition{SeasonDir: "Season 03", Episodes: []string{"epdir"}},
 			wantErr:   true,
 			cDir:      true,
 			cEpisodes: true,
@@ -410,7 +412,7 @@ func TestAddEpisodes(t *testing.T) {
 		},
 		{
 			name:      "episode without number",
-			a:         &Addition{SeasonDir: "Season 03", Episodes: []string{"epx.mkv"}},
+			a:         media.Addition{SeasonDir: "Season 03", Episodes: []string{"epx.mkv"}},
 			wantErr:   true,
 			cDir:      true,
 			cEpisodes: true,
@@ -418,7 +420,7 @@ func TestAddEpisodes(t *testing.T) {
 		},
 		{
 			name:      "negative match index",
-			a:         &Addition{SeasonDir: "Season 00", Episodes: []string{"ep10.mkv"}, MatchIndex: -1},
+			a:         media.Addition{SeasonDir: "Season 00", Episodes: []string{"ep10.mkv"}, MatchIndex: -1},
 			wantErr:   true,
 			cDir:      true,
 			cEpisodes: true,
@@ -426,7 +428,7 @@ func TestAddEpisodes(t *testing.T) {
 		},
 		{
 			name:      "match index 1 out of range",
-			a:         &Addition{SeasonDir: "Season 03", Episodes: []string{"ep100.mkv"}, MatchIndex: 1},
+			a:         media.Addition{SeasonDir: "Season 03", Episodes: []string{"ep100.mkv"}, MatchIndex: 1},
 			wantErr:   true,
 			cDir:      true,
 			cEpisodes: true,
@@ -434,7 +436,7 @@ func TestAddEpisodes(t *testing.T) {
 		},
 		{
 			name:      "match index 2 out of range",
-			a:         &Addition{SeasonDir: "Season 300", Episodes: []string{"s300ep2.mkv"}, MatchIndex: 2},
+			a:         media.Addition{SeasonDir: "Season 300", Episodes: []string{"s300ep2.mkv"}, MatchIndex: 2},
 			wantErr:   true,
 			cDir:      true,
 			cEpisodes: true,
@@ -442,7 +444,7 @@ func TestAddEpisodes(t *testing.T) {
 		},
 		{
 			name:         "previous episode missing E",
-			a:            &Addition{SeasonDir: "Season 10", Episodes: []string{"ep1.mkv"}},
+			a:            media.Addition{SeasonDir: "Season 10", Episodes: []string{"ep1.mkv"}},
 			wantErr:      true,
 			cDir:         true,
 			cEpisodes:    true,
@@ -451,7 +453,7 @@ func TestAddEpisodes(t *testing.T) {
 		},
 		{
 			name:         "previous episode missing period",
-			a:            &Addition{SeasonDir: "Season 10", Episodes: []string{"ep1.mkv"}},
+			a:            media.Addition{SeasonDir: "Season 10", Episodes: []string{"ep1.mkv"}},
 			wantErr:      true,
 			cDir:         true,
 			cEpisodes:    true,
@@ -460,7 +462,7 @@ func TestAddEpisodes(t *testing.T) {
 		},
 		{
 			name:         "previous episode malformed",
-			a:            &Addition{SeasonDir: "Season 10", Episodes: []string{"ep1.mkv"}},
+			a:            media.Addition{SeasonDir: "Season 10", Episodes: []string{"ep1.mkv"}},
 			wantErr:      true,
 			cDir:         true,
 			cEpisodes:    true,
@@ -469,7 +471,7 @@ func TestAddEpisodes(t *testing.T) {
 		},
 		{
 			name:         "previous episode invalid number",
-			a:            &Addition{SeasonDir: "Season 10", Episodes: []string{"ep1.mkv"}},
+			a:            media.Addition{SeasonDir: "Season 10", Episodes: []string{"ep1.mkv"}},
 			wantErr:      true,
 			cDir:         true,
 			cEpisodes:    true,
@@ -478,7 +480,7 @@ func TestAddEpisodes(t *testing.T) {
 		},
 		{
 			name: "add to season 3",
-			a: &Addition{SeasonDir: "Season 3", Episodes: []string{
+			a: media.Addition{SeasonDir: "Season 3", Episodes: []string{
 				"ep1.mp4", "ep2.mp4", "ep3.mp4", "ep4.mp4", "ep5.mp4",
 				"ep6.mp4", "ep7.mp4", "ep8.mp4", "ep9.mp4", "ep10.mp4",
 				"ep11.mp4", "ep12.mp4", "ep13.mp4", "ep14.mp4", "ep15.mp4",
@@ -508,7 +510,7 @@ func TestAddEpisodes(t *testing.T) {
 		},
 		{
 			name:         "add to season 199",
-			a:            &Addition{SeasonDir: "Season 199", Episodes: []string{"ep102.avi", "ep103.mkv", "ep104.mp4"}},
+			a:            media.Addition{SeasonDir: "Season 199", Episodes: []string{"ep102.avi", "ep103.mkv", "ep104.mp4"}},
 			cDir:         true,
 			cEpisodes:    true,
 			showDir:      "Defenders of the Earth (1986) [tvdbid-70824]",
@@ -516,14 +518,14 @@ func TestAddEpisodes(t *testing.T) {
 		},
 		{
 			name:      "new episodes",
-			a:         &Addition{SeasonDir: "Season 00", Episodes: []string{"ep9.avi", "ep10.avi"}},
+			a:         media.Addition{SeasonDir: "Season 00", Episodes: []string{"ep9.avi", "ep10.avi"}},
 			cDir:      true,
 			cEpisodes: true,
 			showDir:   "Dragon Ball Super (2015) [tvdbid-295068]",
 		},
 		{
 			name: "match index 2",
-			a: &Addition{
+			a: media.Addition{
 				SeasonDir:  "Season 30",
 				Episodes:   []string{"Bleach 1S30E04.mkv", "Bleach 2S30E03.mkv", "Bleach 3S30E02.mkv", "Bleach 4S30E01.mkv"},
 				MatchIndex: 2,
@@ -557,7 +559,7 @@ func TestAddEpisodes(t *testing.T) {
 				defer os.RemoveAll(dir)
 				tt.a.Episodes = setupFiles(t, dir, tt.a.Episodes...)
 			}
-			err := AddEpisodes(tt.a)
+			err := media.AddEpisodes(tt.a)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("AddEpisodes(%v) error = %v", tt.a, err)
 			}

@@ -103,7 +103,7 @@ func main() {
 			ID:   args[3],
 			Dir:  args[4],
 		}
-		if err := media.MkShow(&s); err != nil {
+		if err := media.MkShow(s); err != nil {
 			log.Fatal(err)
 		}
 	case "movie":
@@ -119,7 +119,7 @@ func main() {
 			},
 			File: args[5],
 		}
-		if err := media.AddMovie(&m); err != nil {
+		if err := media.AddMovie(m); err != nil {
 			log.Fatal(err)
 		}
 	case "season":
@@ -136,7 +136,7 @@ func main() {
 			Episodes:   args[2:],
 			MatchIndex: *seasonMatch,
 		}
-		if err := media.MkSeason(&s); err != nil {
+		if err := media.MkSeason(s); err != nil {
 			log.Fatal(err)
 		}
 	case "add":
@@ -152,7 +152,7 @@ func main() {
 			Episodes:   args[1:],
 			MatchIndex: *addMatch,
 		}
-		if err := media.AddEpisodes(&a); err != nil {
+		if err := media.AddEpisodes(a); err != nil {
 			log.Fatal(err)
 		}
 	default:

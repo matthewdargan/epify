@@ -30,7 +30,7 @@ type Show struct {
 
 // MkShow creates a show directory. The directory will be labeled like
 // "Series Name (2018) [tvdbid-65567]".
-func MkShow(s *Show) error {
+func MkShow(s Show) error {
 	if len(s.Name) == 0 {
 		return errors.New("empty show name")
 	}
@@ -57,7 +57,7 @@ type Movie struct {
 
 // AddMovie adds a movie to a directory. Movies are labeled like
 // "Film (2018) [tmdbid-65567]".
-func AddMovie(m *Movie) error {
+func AddMovie(m Movie) error {
 	if len(m.Name) == 0 {
 		return errors.New("empty movie name")
 	}
@@ -104,7 +104,7 @@ const YearSep = " (" // YearSep separates the show name from the year.
 
 // MkSeason creates a season directory and moves episodes into it. Episodes are
 // labeled like "Series Name S01E01.mkv".
-func MkSeason(s *Season) error {
+func MkSeason(s Season) error {
 	n, err := strconv.Atoi(s.N)
 	if err != nil {
 		return fmt.Errorf("invalid season: %w", err)
@@ -161,7 +161,7 @@ var episodeRe = regexp.MustCompile(`E(\d+)\.`)
 
 // AddEpisodes adds episodes to a season directory. Episode numbers continue at
 // the previous episode increment.
-func AddEpisodes(a *Addition) error {
+func AddEpisodes(a Addition) error {
 	info, err := os.Stat(a.SeasonDir)
 	if err != nil {
 		return fmt.Errorf("invalid season directory: %w", err)
