@@ -124,13 +124,20 @@ func TestAddMovie(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
-			if tt.cDir {
+			switch {
+			case tt.cDir:
 				dir, err := os.MkdirTemp("", "movie")
 				if err != nil {
 					t.Fatal(err)
 				}
 				defer os.RemoveAll(dir)
 				tt.m.Dir = dir
+			case len(filepath.Ext(tt.m.Dir)) > 0:
+				f, err := os.Create(tt.m.Dir)
+				if err != nil {
+					t.Fatal(err)
+				}
+				defer os.Remove(f.Name())
 			}
 			if tt.cMovie {
 				dir, err := os.MkdirTemp("", "download")
@@ -292,13 +299,20 @@ func TestMkSeason(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
-			if tt.cDir {
+			switch {
+			case tt.cDir:
 				dir := filepath.Join(os.TempDir(), tt.s.ShowDir)
 				if err := os.MkdirAll(dir, 0o755); err != nil {
 					t.Fatal(err)
 				}
 				defer os.RemoveAll(dir)
 				tt.s.ShowDir = dir
+			case len(filepath.Ext(tt.s.ShowDir)) > 0:
+				f, err := os.Create(tt.s.ShowDir)
+				if err != nil {
+					t.Fatal(err)
+				}
+				defer os.Remove(f.Name())
 			}
 			if tt.cEpisodes {
 				dir, err := os.MkdirTemp("", "season")
@@ -538,7 +552,8 @@ func TestAddEpisodes(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
-			if tt.cDir {
+			switch {
+			case tt.cDir:
 				dir := filepath.Join(os.TempDir(), tt.showDir, tt.a.SeasonDir)
 				if err := os.MkdirAll(dir, 0o755); err != nil {
 					t.Fatal(err)
@@ -550,6 +565,12 @@ func TestAddEpisodes(t *testing.T) {
 				defer os.RemoveAll(base)
 				tt.a.SeasonDir = dir
 				tt.prevEpisodes = setupFiles(t, tt.a.SeasonDir, tt.prevEpisodes...)
+			case len(filepath.Ext(tt.a.SeasonDir)) > 0:
+				f, err := os.Create(tt.a.SeasonDir)
+				if err != nil {
+					t.Fatal(err)
+				}
+				defer os.Remove(f.Name())
 			}
 			if tt.cEpisodes {
 				dir, err := os.MkdirTemp("", "season")

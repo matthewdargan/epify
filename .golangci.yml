@@ -12,6 +12,7 @@ linters-settings:
   errcheck:
     exclude-functions:
       - (*os.File).Close
+      - os.Remove
       - os.RemoveAll
   govet:
     disable:
