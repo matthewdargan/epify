@@ -84,7 +84,7 @@ func AddMovie(m Movie) error {
 		return fmt.Errorf("%q is a directory", m.File)
 	}
 	path := fmt.Sprintf("%s (%d) [tmdbid-%d]%s", m.Name, year, tmdbid, filepath.Ext(m.File))
-	if err := os.Rename(m.File, filepath.Join(m.Dir, path)); err != nil {
+	if err := os.Link(m.File, filepath.Join(m.Dir, path)); err != nil {
 		return err
 	}
 	return nil
@@ -144,7 +144,7 @@ func MkSeason(s Season) error {
 	for i, e := range s.Episodes {
 		g.Go(func() error {
 			ep := fmt.Sprintf("%s S%02dE%02d%s", show, n, i+1, filepath.Ext(e))
-			return os.Rename(e, filepath.Join(seasonDir, ep))
+			return os.Link(e, filepath.Join(seasonDir, ep))
 		})
 	}
 	return g.Wait()
@@ -215,7 +215,7 @@ func AddEpisodes(a Addition) error {
 	for i, e := range a.Episodes {
 		g.Go(func() error {
 			ep := fmt.Sprintf("%s S%02dE%02d%s", show, n, epn+i+1, filepath.Ext(e))
-			return os.Rename(e, filepath.Join(a.SeasonDir, ep))
+			return os.Link(e, filepath.Join(a.SeasonDir, ep))
 		})
 	}
 	return g.Wait()
