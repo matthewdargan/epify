@@ -91,29 +91,6 @@ func TestAddMovie(t *testing.T) {
 			wantErr: true,
 		},
 		{
-			name:    "invalid directory",
-			m:       media.Movie{Show: media.Show{Name: "Braveheart", Year: "2005", ID: "197", Dir: "nonexistentdir"}},
-			wantErr: true,
-		},
-		{
-			name:    "directory file",
-			m:       media.Movie{Show: media.Show{Name: "Braveheart", Year: "2005", ID: "197", Dir: "media.go"}},
-			wantErr: true,
-		},
-		{
-			name:    "invalid movie",
-			m:       media.Movie{Show: media.Show{Name: "Braveheart", Year: "2005", ID: "197"}, File: "nonexistent.mkv"},
-			wantErr: true,
-			cDir:    true,
-		},
-		{
-			name:    "movie directory",
-			m:       media.Movie{Show: media.Show{Name: "Braveheart", Year: "2005", ID: "197"}, File: "moviedir"},
-			wantErr: true,
-			cDir:    true,
-			cMovie:  true,
-		},
-		{
 			name:   "valid movie",
 			m:      media.Movie{Show: media.Show{Name: "Braveheart", Year: "2005", ID: "197"}, File: "braveheart.mkv"},
 			cDir:   true,
@@ -124,20 +101,13 @@ func TestAddMovie(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
-			switch {
-			case tt.cDir:
+			if tt.cDir {
 				dir, err := os.MkdirTemp("", "movie")
 				if err != nil {
 					t.Fatal(err)
 				}
 				defer os.RemoveAll(dir)
 				tt.m.Dir = dir
-			case len(filepath.Ext(tt.m.Dir)) > 0:
-				f, err := os.Create(tt.m.Dir)
-				if err != nil {
-					t.Fatal(err)
-				}
-				defer os.Remove(f.Name())
 			}
 			if tt.cMovie {
 				dir, err := os.MkdirTemp("", "download")
@@ -176,16 +146,6 @@ func TestMkSeason(t *testing.T) {
 			wantErr: true,
 		},
 		{
-			name:    "invalid directory",
-			s:       media.Season{N: "3", ShowDir: "nonexistentdir"},
-			wantErr: true,
-		},
-		{
-			name:    "show file",
-			s:       media.Season{N: "3", ShowDir: "media.go"},
-			wantErr: true,
-		},
-		{
 			name:    "directory missing name",
 			s:       media.Season{N: "3", ShowDir: "(2005) [tvdbid-73244]"},
 			wantErr: true,
@@ -214,13 +174,6 @@ func TestMkSeason(t *testing.T) {
 			s:       media.Season{N: "3", ShowDir: "Game of Thrones (2011) [tvdbid-121361]", Episodes: []string{"nonexistent.mkv"}},
 			wantErr: true,
 			cDir:    true,
-		},
-		{
-			name:      "episode directory",
-			s:         media.Season{N: "3", ShowDir: "Breaking Bad (2008) [tvdbid-81189]", Episodes: []string{"epdir"}},
-			wantErr:   true,
-			cDir:      true,
-			cEpisodes: true,
 		},
 		{
 			name:      "episode without number",
@@ -299,20 +252,13 @@ func TestMkSeason(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
-			switch {
-			case tt.cDir:
+			if tt.cDir {
 				dir := filepath.Join(os.TempDir(), tt.s.ShowDir)
 				if err := os.MkdirAll(dir, 0o755); err != nil {
 					t.Fatal(err)
 				}
 				defer os.RemoveAll(dir)
 				tt.s.ShowDir = dir
-			case len(filepath.Ext(tt.s.ShowDir)) > 0:
-				f, err := os.Create(tt.s.ShowDir)
-				if err != nil {
-					t.Fatal(err)
-				}
-				defer os.Remove(f.Name())
 			}
 			if tt.cEpisodes {
 				dir, err := os.MkdirTemp("", "season")
@@ -360,16 +306,6 @@ func TestAddEpisodes(t *testing.T) {
 		prevEpisodes []string
 	}{
 		{
-			name:    "invalid season directory",
-			a:       media.Addition{SeasonDir: "nonexistentdir"},
-			wantErr: true,
-		},
-		{
-			name:    "season file",
-			a:       media.Addition{SeasonDir: "media.go"},
-			wantErr: true,
-		},
-		{
 			name:    "season directory without prefix",
 			a:       media.Addition{SeasonDir: "noprefix"},
 			wantErr: true,
@@ -415,14 +351,6 @@ func TestAddEpisodes(t *testing.T) {
 			wantErr: true,
 			cDir:    true,
 			showDir: "Cowboy Bebop (1998) [tvdbid-76885]",
-		},
-		{
-			name:      "episode directory",
-			a:         media.Addition{SeasonDir: "Season 03", Episodes: []string{"epdir"}},
-			wantErr:   true,
-			cDir:      true,
-			cEpisodes: true,
-			showDir:   "Neon Genesis Evangelion (1995) [tvdbid-70350]",
 		},
 		{
 			name:      "episode without number",
@@ -552,8 +480,7 @@ func TestAddEpisodes(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
-			switch {
-			case tt.cDir:
+			if tt.cDir {
 				dir := filepath.Join(os.TempDir(), tt.showDir, tt.a.SeasonDir)
 				if err := os.MkdirAll(dir, 0o755); err != nil {
 					t.Fatal(err)
@@ -565,12 +492,6 @@ func TestAddEpisodes(t *testing.T) {
 				defer os.RemoveAll(base)
 				tt.a.SeasonDir = dir
 				tt.prevEpisodes = setupFiles(t, tt.a.SeasonDir, tt.prevEpisodes...)
-			case len(filepath.Ext(tt.a.SeasonDir)) > 0:
-				f, err := os.Create(tt.a.SeasonDir)
-				if err != nil {
-					t.Fatal(err)
-				}
-				defer os.Remove(f.Name())
 			}
 			if tt.cEpisodes {
 				dir, err := os.MkdirTemp("", "season")

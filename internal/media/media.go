@@ -69,20 +69,6 @@ func AddMovie(m Movie) error {
 	if err != nil {
 		return fmt.Errorf("invalid TMDBID: %w", err)
 	}
-	info, err := os.Stat(m.Dir)
-	if err != nil {
-		return fmt.Errorf("invalid directory: %w", err)
-	}
-	if !info.IsDir() {
-		return fmt.Errorf("%q is not a directory", m.Dir)
-	}
-	info, err = os.Stat(m.File)
-	if err != nil {
-		return fmt.Errorf("invalid movie: %w", err)
-	}
-	if info.IsDir() {
-		return fmt.Errorf("%q is a directory", m.File)
-	}
 	path := fmt.Sprintf("%s (%d) [tmdbid-%d]%s", m.Name, year, tmdbid, filepath.Ext(m.File))
 	if err := os.Link(m.File, filepath.Join(m.Dir, path)); err != nil {
 		return err
@@ -109,13 +95,6 @@ func MkSeason(s Season) error {
 	if err != nil {
 		return fmt.Errorf("invalid season: %w", err)
 	}
-	info, err := os.Stat(s.ShowDir)
-	if err != nil {
-		return fmt.Errorf("invalid directory: %w", err)
-	}
-	if !info.IsDir() {
-		return fmt.Errorf("%q is not a directory", s.ShowDir)
-	}
 	show, _, ok := strings.Cut(filepath.Base(s.ShowDir), YearSep)
 	if !ok {
 		return fmt.Errorf("invalid directory %q", s.ShowDir)
@@ -123,14 +102,8 @@ func MkSeason(s Season) error {
 	if len(s.Episodes) == 0 {
 		return errNoEpisodes
 	}
-	for _, e := range s.Episodes {
-		info, err = os.Stat(e)
-		if err != nil {
-			return fmt.Errorf("invalid episode: %w", err)
-		}
-		if info.IsDir() {
-			return fmt.Errorf("%q is a directory", e)
-		}
+	if err = statEpisodes(s.Episodes); err != nil {
+		return err
 	}
 	if err = sortEpisodes(s.Episodes, s.MatchIndex); err != nil {
 		return err
@@ -162,13 +135,6 @@ var episodeRe = regexp.MustCompile(`E(\d+)\.`)
 // AddEpisodes adds episodes to a season directory. Episode numbers continue at
 // the previous episode increment.
 func AddEpisodes(a Addition) error {
-	info, err := os.Stat(a.SeasonDir)
-	if err != nil {
-		return fmt.Errorf("invalid season directory: %w", err)
-	}
-	if !info.IsDir() {
-		return fmt.Errorf("%q is not a directory", a.SeasonDir)
-	}
 	base := filepath.Base(a.SeasonDir)
 	season := strings.TrimPrefix(base, "Season ")
 	if base == season {
@@ -186,14 +152,8 @@ func AddEpisodes(a Addition) error {
 	if len(a.Episodes) == 0 {
 		return errNoEpisodes
 	}
-	for _, e := range a.Episodes {
-		info, err = os.Stat(e)
-		if err != nil {
-			return fmt.Errorf("invalid episode: %w", err)
-		}
-		if info.IsDir() {
-			return fmt.Errorf("%q is a directory", e)
-		}
+	if err = statEpisodes(a.Episodes); err != nil {
+		return err
 	}
 	if err = sortEpisodes(a.Episodes, a.MatchIndex); err != nil {
 		return err
@@ -219,6 +179,15 @@ func AddEpisodes(a Addition) error {
 		})
 	}
 	return g.Wait()
+}
+
+func statEpisodes(eps []string) error {
+	for _, e := range eps {
+		if _, err := os.Stat(e); err != nil {
+			return fmt.Errorf("invalid episode: %w", err)
+		}
+	}
+	return nil
 }
 
 var re = regexp.MustCompile(`\d+`)
