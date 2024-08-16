@@ -64,7 +64,7 @@ import (
 	"log"
 	"os"
 
-	"github.com/matthewdargan/epify/internal/media"
+	"github.com/matthewdargan/epify/media"
 )
 
 var (

@@ -10,7 +10,7 @@ import (
 	"path/filepath"
 	"testing"
 
-	"github.com/matthewdargan/epify/internal/media"
+	"github.com/matthewdargan/epify/media"
 )
 
 func TestMkShow(t *testing.T) {
