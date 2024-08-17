@@ -11,46 +11,46 @@
 //	epify season [-m index] seasonnum showdir episode...
 //	epify add [-m index] seasondir episode...
 //
-// `epify show` creates a show directory like
+// "epify show" creates a show directory like
 // "Series Name (2018) [tvdbid-65567]".
 //
-// `epify movie` adds a movie to a directory. Movies are labeled like
+// "epify movie" adds a movie to a directory. Movies are labeled like
 // "Film (2018) [tmdbid-65567]".
 //
-// `epify season` populates a season directory with episodes. Episodes are
+// "epify season" populates a season directory with episodes. Episodes are
 // labeled like "Series Name S01E01.mkv".
 //
-// `epify add` adds episodes to a season directory, continuing at the previous
+// "epify add" adds episodes to a season directory, continuing at the previous
 // episode increment.
 //
-// The `-m` flag specifies the index of the episode number in filenames for
-// the `epify season` and `epify add` commands.
+// The "-m" flag specifies the index of the episode number in filenames for
+// the "epify season" and "epify add" commands.
 //
 // Examples:
 //
-// Create show directory `/media/shows/The Office (2005) [tvdbid-73244]`:
+// Create show directory "/media/shows/The Office (2005) [tvdbid-73244]":
 //
 //	$ epify show 'The Office' 2005 73244 '/media/shows'
 //
-// Add movie to `/media/movies`:
+// Add movie to "/media/movies":
 //
 //	$ epify movie 'Braveheart' 1995 197 '/media/movies' '/downloads/braveheart.mkv'
 //
 // Populate season directory
-// `/media/shows/The Office (2005) [tvdbid-73244]/Season 03`:
+// "/media/shows/The Office (2005) [tvdbid-73244]/Season 03":
 //
 //	$ epify season 3 '/media/shows/The Office (2005) [tvdbid-73244]' /downloads/the_office_s3_p1/ep*.mkv
 //
 // Populate season directory
-// `/media/shows/Breaking Bad (2008) [tvdbid-81189]/Season 04`:
+// "/media/shows/Breaking Bad (2008) [tvdbid-81189]/Season 04":
 //
 //	$ epify season -m 1 4 '/media/shows/Breaking Bad (2008) [tvdbid-81189]' /downloads/breaking_bad_s4_p1/s4ep*.mkv
 //
-// Add episodes to `/media/shows/The Office (2005) [tvdbid-73244]/Season 03`:
+// Add episodes to "/media/shows/The Office (2005) [tvdbid-73244]/Season 03":
 //
 //	$ epify add '/media/shows/The Office (2005) [tvdbid-73244]/Season 03' /downloads/the_office_s3_p2/ep*.mkv
 //
-// Add episodes to `/media/shows/Breaking Bad (2008) [tvdbid-81189]/Season 04`:
+// Add episodes to "/media/shows/Breaking Bad (2008) [tvdbid-81189]/Season 04":
 //
 //	$ epify add -m 1 '/media/shows/Breaking Bad (2008) [tvdbid-81189]/Season 04' /downloads/breaking_bad_s4_p2/s4ep*.mkv
 //
